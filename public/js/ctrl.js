@@ -40,24 +40,25 @@ function scopeClear(){
    graphInverter.onPaint(scopeData);
 }
 
-var gaugeSpeed={id:'gauge1',unit:'[RPM]',title:'Speed',min:0,max:2000,
-mTick:[0,500,1000,1500,2000],
-alarm:'[ {"from": 0, "to":1000,"color": "rgba(255,255,255,1.0)"},{"from": 1000,"to":1800, "color": "rgba(0,255,0,1)"},{"from":1800 ,"to":2000, "color": "rgba(255,0,0,1.0)"}]'
+var gaugeSpeed={id:'gauge1',unit:'[RPM]',title:'Speed',min:-6000,max:6000,
+mTick:[-6000,-4000,-2000,0,2000,4000,6000],
+//alarm:'[ {"from": -6000, "to":-4000, "color": "rgba(255,  0,  0, 1.0)"},{"from": -4000, "to":-2000, "color": "rgba(255,255,  0, 0.5)"}, {"from": -2000, "to": 2000, "color": "rgba(255,255,255, 0.5)"},{"from":  000 , "to": 4000, "color": "rgba(255,255,  0, 0.5)"}, {"from": 4000 , "to": 6000, "color": "rgba(255,  0,  0, 1.5)"}]'
+alarm:'[ {"from": -6000, "to":-4000, "color": "rgba(255,  0,  0, 1.0)"},{"from": -4000, "to":4000, "color": "rgba(255,255,255, 0.5)"}, {"from": 4000, "to": 6000, "color": "rgba(255,0,0, 1.0)"}]'
 }
 
-var gaugePower={id:'gauge2',unit:'[kW]',title:'Power',min:0,max:5,
-mTick:[0,1,2,3,4,5],
-alarm:'[ {"from": 0, "to":2.2,"color": "rgba(255,255,255,1.0)"},{"from": 2.2,  "to":3.0, "color": "rgba(255,0,0,.3)"},{"from": 3.0,  "to":5.0, "color": "rgba(255,0,0,1.0)"}]'
+var gaugeRefOut={id:'gauge2',unit:'[Rate %]',title:'Speed/Torq',min:-300,max:300,
+mTick:[-300,-200,-100,0,100,200,300],
+alarm:'[ {"from": -300, "to":-200,"color": "rgba(255,0,0,1.0)"},{"from": 200,  "to":300, "color": "rgba(255,0,0,1.0)"}]'
 }
 
-var gaugeI={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:20,
-mTick:[0,5,10,15,20],
-alarm:'[ {"from": 0, "to":10.0,"color": "rgba(255,255,255,1.0)"},{"from": 10.0,  "to":15.0, "color": "rgba(255,0,0,.3)"},{"from": 15.0,  "to":20.0, "color": "rgba(255,0,0,1.0)"}]'
+var gaugeI={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:500,
+mTick:[0,100,200,300,400,500],
+alarm:'[ {"from": 0, "to":300.0,"color": "rgba(255,255,255,1.0)"},{"from": 300.0,  "to":400.0, "color": "rgba(255,0,0,.3)"},{"from": 400.0,  "to":500.0, "color": "rgba(255,0,0,1.0)"}]'
 }
 
-var gaugeQ={id:'gauge4',unit:'[kW]',title:'Q kW',min:0,max:5,
-mTick:[0,1,2,3,4,5],
-alarm:'[ {"from": 0, "to":2.2,"color": "rgba(255,255,255,1.0)"},{"from": 2.2,  "to":3.0, "color": "rgba(255,0,0,.3)"},{"from": 3.0,  "to":5.0, "color": "rgba(255,0,0,1.0)"}]'
+var gaugeQ={id:'gauge4',unit:'[Vdc]',title:'Vdc',min:0,max:600,
+mTick:[0,100,200,300,400,500,600],
+alarm:'[ {"from": 0, "to":500,"color": "rgba(255,255,255,1.0)"},{"from": 501,  "to":550, "color": "rgba(255,0,0,.3)"},{"from": 550,  "to":600, "color": "rgba(255,0,0,1.0)"}]'
 }
 
 function gaugeInit(arg){
@@ -82,13 +83,11 @@ $("document").ready(function() {
    graphInverter.init();
 
    gaugeInit(gaugeSpeed);
-   gaugeInit(gaugePower);
+   gaugeInit(gaugeRefOut);
    gaugeInit(gaugeI);
    gaugeInit(gaugeQ);
 
 });
-
-
 
 function btnStartGraph(){
 
@@ -152,20 +151,17 @@ function btnRestart(){
    socket.emit('btnClick',msgTx);
 }
 
-const SCOPE_ADDR_OFF = 61;
-
 function sendSetScopeChCmd(ch,point,scale,offset){
 
    var returns = 'Invalid number';
 
-   var addr = SCOPE_ADDR_OFF + 3*ch;
-   var sciCmd = '9:6:'+ '0'+addr+':';
+   var addr = 101 + 3*ch;
+   var sciCmd = '9:6:'+addr+':';
    var codeData = (point*1.0).toExponential(3);
 
    var setPoint = sciCmd + codeData;
 
    if( setPoint.length !== 16 ){
-      console.log('Err set Scope Point command =', setPoint);
       document.getElementById('codeEditResult').innerHTML = "Invalid scope Point : "+ setPoint ;
       return;
    }   
@@ -176,13 +172,12 @@ function sendSetScopeChCmd(ch,point,scale,offset){
    },500);
 
    //--- setScale
-   addr = SCOPE_ADDR_OFF + 1 + 3*ch;
-   sciCmd = '9:6:'+'0'+addr+':';
+   addr = 102 + 3*ch;
+   sciCmd = '9:6:'+addr+':';
    codeData = (scale*1.0).toExponential(3);
    var setScale = sciCmd + codeData;
 
    if( setScale.length !== 16 ){
-      console.log('Err set scale command =', setScale);
       document.getElementById('codeEditResult').innerHTML = "Invalid scope Point : "+ setScale ;
       return;
    }   
@@ -193,13 +188,12 @@ function sendSetScopeChCmd(ch,point,scale,offset){
    },1000);
 
    //--- setOffset
-   addr = SCOPE_ADDR_OFF + 2 + 3*ch;
-   sciCmd = '9:6:'+'0'+addr+':';
+   addr = 103 + 3*ch;
+   sciCmd = '9:6:'+addr+':';
    codeData = (offset*1.0).toExponential(3);
    var setOffset = sciCmd + codeData;
 
    if( setOffset.length !== 16 ){
-      console.log('Err set Scope Offset command =', setOffset);
       document.getElementById('codeEditResult').innerHTML = "Invalid scope Point : "+ setOffse$
       return;
    }   
@@ -214,76 +208,6 @@ var msgTx = { selVac: 0};
 var traceOnOff = 0;
 var monitorOnOff = 0;
 
-/*
-var ch1_list = document.getElementsByName('ch1_list1_list2')[0];
-var ch2_list = document.getElementsByName('ch2_list1_list2')[0];
-var ch3_list = document.getElementsByName('ch3_list1_list2')[0];
-var ch4_list = document.getElementsByName('ch4_list1_list2')[0];
-
-var ChList = new Array();
-ChList[0] ='';
-ChList[1] = ['U|4','V|5','W|6','d|0','q|1','D|2','Q|3'];
-ChList[2] = ['U|11','V|12','W|13','d|7','q|8','D|9','Q|10'];
-ChList[3] = ['Iu|14','Iv|15','se|18','cmd|19','Vdc|16','T|17'];
-ChList[4] = ['U|20','V|21','W|22'];
-ChList[5] = ['Theta|30','ThetaM|31','sinTheta|32','cosTheta|33','we|34','wr|35','wr_m|36'];
-
-function updateCh1Select(selectedGroup){
-    if (selectedGroup>0){
-        for (var i=0; i < ChList[selectedGroup].length; i++)
-            ch1_list.options[i] = new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh2Select(selectedGroup){
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch2_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh3Select(selectedGroup){
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch3_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh4Select(selectedGroup){
-    ch4_list.options.length=0;
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch4_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-var chSelected = new Array();
-chSelected[0] = 0;
-chSelected[1] = 1;
-chSelected[2] = 2;
-chSelected[3] = 3;
-chSelected[4] = 4;
-chSelected[5] = 5;
-
-function selectScopeCh(ch, selected){
-   chSelected[ch] = selected;
-}
-
-function setScopeCh(ch){
-
-   var chanel = ch+1;
-   var selector = document.getElementById("idScaleCh"+chanel);
-   var scale = selector[selector.selectedIndex].value;
-
-   var setId = "idOffsetCh"+chanel;
-   console.log("setId = ",setId); 
-   var offset = document.getElementById(setId).value;
-
-   console.log(chSelected[ch],scale,offset);
-   sendSetScopeChCmd(ch,chSelected[ch],scale,offset);
-}
-
-*/
 
 // '9:4:901:0.000e+0'
 function getSciCmd( ){
@@ -449,24 +373,25 @@ socket.on('trace', function (msg) {
 
 socket.on('graph', function (msg) {
  
-   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.P_total,' RePower = ',msg.RePower,'ImPower = ',msg.ImPower);
+   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.P_total,' ref_out = ',msg.RePower,'Vdc = ',msg.ImPower);
    graphCount = ( graphCount < 600 ) ? graphCount + 1 : 0 ;
 
-   graphData[0].sample[graphCount] = msg.rpm ; 
+   graphData[0].sample[graphCount] = (msg.rpm -2048) *2.0 + 2048; 
+//   graphData[0].sample[graphCount] = msg.rpm; 
    graphData[1].sample[graphCount] = msg.Irms ; 
-   graphData[2].sample[graphCount] = msg.P_total; 
-   graphData[3].sample[graphCount] = msg.ImPower; 
+   //graphData[2].sample[graphCount] = msg.P_total; 
+   //graphData[3].sample[graphCount] = msg.ImPower; 
    graphInverter.onPaint(graphData);
 //convert to
-   var speed =    ((msg.rpm      -2048)/ 2048) * 2000;
-   var power =    ((msg.P_total  -2048)/ 2048) * 10;
-   var I_rms =    ((msg.Irms     -2048)/ 2048) * 20;
-   var Q_power =  ((msg.ImPower  -2048)/ 2048) * 10;
+   var speed =   ((msg.rpm      -2048)/ 2048) * 10000;
+   var ref_out = ((msg.RePower  -2048)/ 2048) * 500;
+   var I_rms =   ((msg.Irms     -2048)/ 2048) * 500;
+   var Vdc =     ((msg.ImPower  -2048)/ 2048) * 1000;
 
    $('#gauge1').attr('data-value', speed);
-   $('#gauge2').attr('data-value', power);
+   $('#gauge2').attr('data-value', Math.floor(ref_out + 0.5));
    $('#gauge3').attr('data-value', I_rms);
-   $('#gauge4').attr('data-value', Q_power);
+   $('#gauge4').attr('data-value', Vdc);
 });
 
 

@@ -16,8 +16,9 @@ function shutdown(callback){
 
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
-//const port = new SerialPort('/dev/ttyS0',{
-const port = new SerialPort('/dev/ttyUSB0',{
+const port = new SerialPort('/dev/ttyUSB1',{
+//const port = new SerialPort('/dev/ttyAMA1',{
+//const port = new SerialPort('COM4',{
    //baudRate: 500000
    baudRate: 115200
 });
@@ -206,7 +207,7 @@ parser.on('data',function (data){
 	var command_addr = parseInt(buff.slice(4,7));
 	var command_data = parseFloat(buff.slice(8,16));
 
-	//	console.log(data);
+	console.log(data);
 
 	if(( buff.length < 16 ) || ( command_addr !== 900 )){
 		if( command_addr == 901 ){ 
@@ -290,7 +291,7 @@ setInterval(function(){
 
 setInterval(function() {
 	if(scopeOnOff)	  port.write('9:4:900:1.000e+2');
-},3000);
+},4000);
 
 setInterval(function(){
 	var stamp = new Date().toLocaleString();
