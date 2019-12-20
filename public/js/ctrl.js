@@ -155,7 +155,9 @@ function sendSetScopeChCmd(ch,point,scale,offset){
 
    var returns = 'Invalid number';
 
-   var addr = 101 + 3*ch;
+   var addr = 21 + 3*ch;
+	addr = '0'+addr;
+
    var sciCmd = '9:6:'+addr+':';
    var codeData = (point*1.0).toExponential(3);
 
@@ -172,7 +174,9 @@ function sendSetScopeChCmd(ch,point,scale,offset){
    },500);
 
    //--- setScale
-   addr = 102 + 3*ch;
+   addr = 22 + 3*ch;
+	addr = '0' + addr;
+
    sciCmd = '9:6:'+addr+':';
    codeData = (scale*1.0).toExponential(3);
    var setScale = sciCmd + codeData;
@@ -188,7 +192,9 @@ function sendSetScopeChCmd(ch,point,scale,offset){
    },1000);
 
    //--- setOffset
-   addr = 103 + 3*ch;
+   addr = 23 + 3*ch;
+	addr = '0'+addr;
+
    sciCmd = '9:6:'+addr+':';
    codeData = (offset*1.0).toExponential(3);
    var setOffset = sciCmd + codeData;
