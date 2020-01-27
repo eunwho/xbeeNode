@@ -1,4 +1,5 @@
-//"use strict";
+//"use strict"; 
+// $sudo dmesg | grep tty 
 const NO_SCOPE_DATA = 400;
 var inveStart = 0;
 var digiOut = 0xff;
@@ -16,7 +17,8 @@ function shutdown(callback){
 
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
-const port = new SerialPort('/dev/ttyUSB0',{
+const port = new SerialPort('/dev/ttyS0',{
+//const port = new SerialPort('/dev/ttyUSB1',{
 //const port = new SerialPort('/dev/ttyAMA1',{
 //const port = new SerialPort('COM4',{
    //baudRate: 500000
@@ -194,7 +196,7 @@ io.on('connection', function (socket) {
 
 });
 
-var graphData = { rpm:0,Irms:0,P_toatal:0,RePower:0,ImPower:0};
+var graphData = { rpm:0,Irms:0,Power:0,Ref:0,Vdc:0,Graph1:0,Graph2:0};
 var scopeData = {Ch:0,data:[]};
 var graphProcCount = 0;
 
@@ -241,21 +243,33 @@ parser.on('data',function (data){
    	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
    	msb = ( buff[i*3] & 0x0f ) * 256;
    	tmp = msb + lsb;
-		graphData.P_total = tmp;
+		graphData.Power = tmp;
 
    	i = 3;
    	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
    	msb = ( buff[i*3] & 0x0f ) * 256;
    	tmp = msb + lsb;
-		graphData.RePower = tmp;
+		graphData.Ref = tmp;
 
- 		i = 4;
+ 	i = 4;
    	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
    	msb = ( buff[i*3] & 0x0f ) * 256;
    	tmp = msb + lsb;
-		graphData.ImPower = tmp;
+	graphData.Vdc = tmp;
 
-		myEmitter.emit('mGraph', graphData);
+ 	i = 5;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph1 = tmp;
+
+ 	i = 6;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph2 = tmp;
+
+	myEmitter.emit('mGraph', graphData);
 		return;
 	} else if( command_data > 99 ) {
 		var i, j, lsb, msb, tmp;

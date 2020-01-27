@@ -389,30 +389,22 @@ socket.on('trace', function (msg) {
 
 socket.on('graph', function (msg) {
  
-   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.P_total,' ref_out = ',msg.RePower,'Vdc = ',msg.ImPower);
+//   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
+//   console.log('Graph1 =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
    graphCount = ( graphCount < 600 ) ? graphCount + 1 : 0 ;
-
-/*
-   var temp = ( msg.rmp);
-   if( temp  < 0 ) { temp = 0
-   } else if( temp > 4095 ){ 
-	temp = 4095
-   }
-   graphData[0].sample[graphCount] = (temp -2048) *2.0 + 2048;
-*/
-
 
    graphData[0].sample[graphCount] = (msg.rpm -2048) *2.0 + 2048;
    graphData[1].sample[graphCount] = msg.Irms ; 
-   //graphData[2].sample[graphCount] = msg.P_total; 
-   //graphData[3].sample[graphCount] = msg.ImPower; 
+   graphData[2].sample[graphCount] = msg.Graph1; 
+   graphData[3].sample[graphCount] = msg.Graph2; 
    graphInverter.onPaint(graphData);
+
 //convert to
 
-   var speed =   ((msg.rpm      -2048)/ 2048) * 10000;
-   var ref_out = ((msg.RePower  -2048)/ 2048) * 500;
-   var I_rms =   ((msg.Irms     -2048)/ 2048) * 500;
-   var Vdc =     ((msg.ImPower  -2048)/ 2048) * 1000;
+   var speed =   ((msg.rpm  -2048)/ 2048) * 10000;
+   var ref_out = ((msg.Ref  -2048)/ 2048) * 500;
+   var I_rms =   ((msg.Irms -2048)/ 2048) * 500;
+   var Vdc =     ((msg.Vdc  -2048)/ 2048) * 1000;
 
    console.log('rpm =',speed,'Irms =',I_rms,' ref_out = ',ref_out,'Vdc = ',Vdc);
 
@@ -428,7 +420,6 @@ socket.on('graph', function (msg) {
    if ( Vdc  >  800 ) Vdc = 800;
    if ( Vdc  <    0 ) Vdc = 0;
   
-
    $('#gauge1').attr('data-value', speed);
    $('#gauge2').attr('data-value', Math.floor(ref_out + 0.5));
    $('#gauge3').attr('data-value', I_rms);
