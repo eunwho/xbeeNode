@@ -51,9 +51,13 @@ mTick:[-300,-200,-100,0,100,200,300],
 alarm:'[ {"from": -300, "to":-200,"color": "rgba(255,0,0,1.0)"},{"from": 200,  "to":300, "color": "rgba(255,0,0,1.0)"}]'
 }
 
-var gaugeI={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:500,
+var gaugeI500={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:500,
 mTick:[0,100,200,300,400,500],
 alarm:'[ {"from": 0, "to":300.0,"color": "rgba(255,255,255,1.0)"},{"from": 300.0,  "to":400.0, "color": "rgba(255,0,0,.3)"},{"from": 400.0,  "to":500.0, "color": "rgba(255,0,0,1.0)"}]'
+}
+var gaugeI50={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:50,
+mTick:[0,10,20,30,40,50],
+alarm:'[ {"from": 0, "to":30.0,"color": "rgba(255,255,255,1.0)"},{"from": 30.0,  "to":40.0, "color": "rgba(255,0,0,.3)"},{"from": 40.0,  "to":50.0, "color": "rgba(255,0,0,1.0)"}]'
 }
 
 var gaugeQ={id:'gauge4',unit:'[Vdc]',title:'Vdc',min:0,max:800,
@@ -84,7 +88,7 @@ $("document").ready(function() {
 
    gaugeInit(gaugeSpeed);
    gaugeInit(gaugeRefOut);
-   gaugeInit(gaugeI);
+   gaugeInit(gaugeI50);
    gaugeInit(gaugeQ);
 
 });
