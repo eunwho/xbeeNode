@@ -301,7 +301,7 @@ function btnOptionSendCmd(){
       cmd = '9:4:901:0.000e+0';  
       socket.emit('codeEdit',cmd);
    } else if(value == 4) { 
-      cmd = '9:6:900:4.000e+1';  // save
+      cmd = '9:4:908:0.000e+1';  // read INput state and pwm trip
       socket.emit('codeEdit',cmd);
    } else if(value == 5) { 
       cmd = '9:6:900:9.000e+1';  // reset all codes to factory setting
