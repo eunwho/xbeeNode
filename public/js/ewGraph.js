@@ -26,6 +26,8 @@ var graphInverter = (function() {
   m_trace[1]           = null;
   m_trace[2]           = null;
   m_trace[3]           = null;
+  m_trace[4]           = null;
+  m_trace[5]           = null;
 
   // ==============================================================
   // background display scaffolding
@@ -182,6 +184,8 @@ var graphInverter = (function() {
       d[1] = v[1] * h;
       d[2] = v[2] * w;
       d[3] = v[3] * h;
+      d[4] = v[3] * h;
+      d[5] = v[3] * h;
       return d;
     });
 
@@ -190,6 +194,8 @@ var graphInverter = (function() {
     mid_div[1] = mid_div_base[1] * h;
     mid_div[2] = mid_div_base[2] * w;
     mid_div[3] = mid_div_base[3] * h;
+    mid_div[4] = mid_div_base[3] * h;
+    mid_div[5] = mid_div_base[3] * h;
   }
 
   function clear(ctx,width,height) {
@@ -268,7 +274,7 @@ var graphInverter = (function() {
     y += dy + 1;
     ctx.fillText('CH2 : Irms 5A / DIV ',440,10+dy);
 
-    ctx.fillStyle = "red";
+    ctx.fillStyle = "hotpink";
     y += dy + 1;
     ctx.fillText('CH3 : P_total 2kW / DIV ',440,10+ dy * 2);
 
@@ -276,6 +282,15 @@ var graphInverter = (function() {
     y += dy + 1;
     ctx.fillText('CH4 : P Power 2kW / DIV ',440,10 + dy * 3);
 
+    ctx.fillStyle = "cyan";
+    y += dy + 1;
+    ctx.fillText('CH5 : RPM 1000rpm/ DIV ',440,10 + dy * 4);
+
+    ctx.fillStyle = "lightcoral";
+    y += dy + 1;
+    ctx.fillText('CH6 : Vdc 10V/DIV',440,10 + dy * 5);
+
+    
     t = (m_run) ? ("RUN : " + m_updates.toFixed(0)) : "STOP";
     ctx.fillStyle = (m_run) ? 'lime' : 'red';
     ctx.fillText(t,2,height-4);
@@ -308,6 +323,14 @@ var graphInverter = (function() {
 
     // set channel parameters
     switch(trace.channel) {
+    case 4:
+      ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
+      ctx.strokeStyle = "cyan";
+      break;
+    case 5:
+      ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
+      ctx.strokeStyle = "lightcoral";
+      break;
     case 0:
       ctx.translate(xaxis[0][0],xaxis[0][1] + voffset);
       ctx.strokeStyle = "darkgoldenrod";
@@ -318,7 +341,7 @@ var graphInverter = (function() {
       break;
     case 2:
       ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
-      ctx.strokeStyle = "red";
+      ctx.strokeStyle = "hotpink";
       break;
     case 3:
       ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
@@ -372,6 +395,8 @@ var graphInverter = (function() {
       m_trace[1] = trace[1];
       m_trace[2] = trace[2];
       m_trace[3] = trace[3];
+      m_trace[4] = trace[4];
+      m_trace[5] = trace[5];
     }
 
     // draw last traces
@@ -386,6 +411,12 @@ var graphInverter = (function() {
     }
     if (m_trace[3] !== null) {
       drawTrace(m_context, m_trace[3], m_width, m_height, m_voffset[3]);
+    }
+    if (m_trace[4] !== null) {
+      drawTrace(m_context, m_trace[4], m_width, m_height, m_voffset[3]);
+    }
+    if (m_trace[5] !== null) {
+      drawTrace(m_context, m_trace[5], m_width, m_height, m_voffset[3]);
     }
     // draw text annotations
     drawAnnotations(m_context,m_width,m_height,m_text_size);

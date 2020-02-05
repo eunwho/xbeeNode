@@ -1,11 +1,11 @@
 
 //--- start the client application
+const I_SENS_VALUE = 50.0;
 var noVac = 1;
 var socket = io.connect();
 var messages = 0;
 
 const dataLength = 600;
-
 var graphCount = 0;
 
 var graphData = new Array();
@@ -14,6 +14,8 @@ graphData[0] = { channel:0,length:dataLength,sample:[dataLength]};
 graphData[1] = { channel:1,length:dataLength,sample:[dataLength]};
 graphData[2] = { channel:2,length:dataLength,sample:[dataLength]};
 graphData[3] = { channel:3,length:dataLength,sample:[dataLength]};
+graphData[4] = { channel:4,length:dataLength,sample:[dataLength]};
+graphData[5] = { channel:5,length:dataLength,sample:[dataLength]};
 
 var scopeData = new Array();
 
@@ -26,7 +28,7 @@ scopeData[3] = { channel:3,length:dataLength,sample:[NO_SCOPE_DATA]};
 // var inputOffset = [1817,1817,2121,2009];
 
 function graphClear(){
-   for( var j = 0 ; j < 4 ; j++){
+   for( var j = 0 ; j < 6 ; j++){
       for( var i = 0 ; i < 600 ; i++ ) graphData[j].sample[i] = 2048;
    }
    graphCount = 0;
@@ -55,9 +57,20 @@ var gaugeI500={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:500,
 mTick:[0,100,200,300,400,500],
 alarm:'[ {"from": 0, "to":300.0,"color": "rgba(255,255,255,1.0)"},{"from": 300.0,  "to":400.0, "color": "rgba(255,0,0,.3)"},{"from": 400.0,  "to":500.0, "color": "rgba(255,0,0,1.0)"}]'
 }
+
+var gaugeI100={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:100,
+mTick:[0,25,50,75,100],
+alarm:'[ {"from": 0, "to":50.0,"color": "rgba(255,255,255,1.0)"},{"from": 50.0,  "to":75.0, "color": "rgba(255,0,0,.3)"},{"from": 75.0,  "to":100.0, "color": "rgba(255,0,0,1.0)"}]'
+}
+
 var gaugeI50={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:50,
 mTick:[0,10,20,30,40,50],
 alarm:'[ {"from": 0, "to":30.0,"color": "rgba(255,255,255,1.0)"},{"from": 30.0,  "to":40.0, "color": "rgba(255,0,0,.3)"},{"from": 40.0,  "to":50.0, "color": "rgba(255,0,0,1.0)"}]'
+}
+
+var gaugeI10={id:'gauge3',unit:'[A]',title:'I_ac',min:0,max:10.0,
+mTick:[0,2.5,5.0,7.5,10.0],
+alarm:'[ {"from": 0, "to":5.0,"color": "rgba(255,255,255,1.0)"},{"from": 5.0,  "to":7.5, "color": "rgba(255,0,0,.3)"},{"from": 7.5,"to":10.0, "color": "rgba(255,0,0,1.0)"}]'
 }
 
 var gaugeQ={id:'gauge4',unit:'[Vdc]',title:'Vdc',min:0,max:800,
@@ -88,7 +101,7 @@ $("document").ready(function() {
 
    gaugeInit(gaugeSpeed);
    gaugeInit(gaugeRefOut);
-   gaugeInit(gaugeI50);
+   gaugeInit(gaugeI10);
    gaugeInit(gaugeQ);
 
 });
@@ -391,23 +404,29 @@ socket.on('trace', function (msg) {
 
 });
 
+
+// power scale 10k, 50k, 100k 500k
+
 socket.on('graph', function (msg) {
  
 //   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
 //   console.log('Graph1 =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
    graphCount = ( graphCount < 600 ) ? graphCount + 1 : 0 ;
 
-   graphData[0].sample[graphCount] = (msg.rpm -2048) *2.0 + 2048;
-   graphData[1].sample[graphCount] = msg.Irms ; 
-   graphData[2].sample[graphCount] = msg.Graph1; 
-   graphData[3].sample[graphCount] = msg.Graph2; 
+   graphData[0].sample[graphCount] = msg.Graph1;
+   graphData[1].sample[graphCount] = msg.Graph2; 
+   graphData[2].sample[graphCount] = msg.Graph3; 
+   graphData[3].sample[graphCount] = msg.Graph4;; 
+   graphData[4].sample[graphCount] = msg.Graph5; 
+   graphData[5].sample[graphCount] = msg.Graph6; 
    graphInverter.onPaint(graphData);
+
 
 //convert to
 
-   var speed =   ((msg.rpm  -2048)/ 2048) * 10000;
+   var speed =   ((msg.rpm  -2048)/ 2048) * 5000;
    var ref_out = ((msg.Ref  -2048)/ 2048) * 500;
-   var I_rms =   ((msg.Irms -2048)/ 2048) * 500;
+   var I_rms =   ((msg.Irms -2048)/ 2048) * I_SENS_VALUE;
    var Vdc =     ((msg.Vdc  -2048)/ 2048) * 1000;
 
    console.log('rpm =',speed,'Irms =',I_rms,' ref_out = ',ref_out,'Vdc = ',Vdc);

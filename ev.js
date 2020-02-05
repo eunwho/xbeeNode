@@ -196,7 +196,7 @@ io.on('connection', function (socket) {
 
 });
 
-var graphData = { rpm:0,Irms:0,Power:0,Ref:0,Vdc:0,Graph1:0,Graph2:0};
+var graphData = { rpm:0,Irms:0,Power:0,Ref:0,Vdc:0,Graph1:0,Graph2:0,Graph3:0,Graph4:0,Graph6:0};
 var scopeData = {Ch:0,data:[]};
 var graphProcCount = 0;
 
@@ -268,6 +268,30 @@ parser.on('data',function (data){
    	msb = ( buff[i*3] & 0x0f ) * 256;
    	tmp = msb + lsb;
 	graphData.Graph2 = tmp;
+
+ 	i = 7;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph3 = tmp;
+
+ 	i = 8;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph4 = tmp;
+
+ 	i = 9;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph5 = tmp;
+
+ 	i = 10;
+   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
+   	msb = ( buff[i*3] & 0x0f ) * 256;
+   	tmp = msb + lsb;
+	graphData.Graph6 = tmp;
 
 	myEmitter.emit('mGraph', graphData);
 		return;
