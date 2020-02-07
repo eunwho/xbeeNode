@@ -268,19 +268,19 @@ var graphInverter = (function() {
 
     ctx.fillStyle = "darkgoldenrod";
     y += dy + 1;
-    ctx.fillText('CH1 : RPM 500 RPM / DIV ',440,10);
+    ctx.fillText('CH1 : ',440,10);
 
     ctx.fillStyle = "indigo";
     y += dy + 1;
-    ctx.fillText('CH2 : Irms 5A / DIV ',440,10+dy);
+    ctx.fillText('CH2 : ',440,10+dy);
 
-    ctx.fillStyle = "hotpink";
+    ctx.fillStyle = "red";
     y += dy + 1;
-    ctx.fillText('CH3 : P_total 2kW / DIV ',440,10+ dy * 2);
+    ctx.fillText('CH3 : ',440,10+ dy * 2);
 
     ctx.fillStyle = "green";
     y += dy + 1;
-    ctx.fillText('CH4 : P Power 2kW / DIV ',440,10 + dy * 3);
+    ctx.fillText('CH4 : ',440,10 + dy * 3);
 
     ctx.fillStyle = "cyan";
     y += dy + 1;
@@ -341,7 +341,7 @@ var graphInverter = (function() {
       break;
     case 2:
       ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
-      ctx.strokeStyle = "hotpink";
+      ctx.strokeStyle = "red";
       break;
     case 3:
       ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);

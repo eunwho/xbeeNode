@@ -1,6 +1,6 @@
 
 //--- start the client application
-const I_SENS_VALUE = 50.0;
+const I_SENS_VALUE = 20.0;
 var noVac = 1;
 var socket = io.connect();
 var messages = 0;
