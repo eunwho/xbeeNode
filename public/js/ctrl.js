@@ -1,6 +1,9 @@
 
 //--- start the client application
 const I_SENS_VALUE = 20.0;
+
+// const NO_SCOPE_DATA = 400;
+
 var noVac = 1;
 var socket = io.connect();
 var messages = 0;
@@ -39,7 +42,7 @@ function scopeClear(){
    for( var j = 0 ; j < 4 ; j++){
       for( var i = 0 ; i < NO_SCOPE_DATA ; i++ )   scopeData[j].sample[i] = 2048;
    }
-   graphInverter.onPaint(scopeData);
+   oscope.onPaint(scopeData);
 }
 
 var gaugeSpeed={id:'gauge1',unit:'[RPM]',title:'Speed',min:-6000,max:6000,
@@ -365,17 +368,12 @@ function btnOptionSendCmd(){
   });
 
 socket.on('scope', function (msg) {
-
-
    var chanel = msg.Ch - 49;
-
    console.log('received scope data chanel = '+ chanel);
    scopeData[chanel].sample = msg.data ;
-
    if(chanel == 3 ){ 
       oscope.onPaint(scopeData);
    }
-
 });
 
 socket.on('disconnect',function() {
@@ -448,7 +446,24 @@ socket.on('graph', function (msg) {
    $('#gauge3').attr('data-value', I_rms);
    $('#gauge4').attr('data-value', Vdc);
 });
+var scopeCount = 0;
 
+/*
+setInterval(function(){
 
-
+   for( var i = 0 ; i < 300 ; i++ ){
+      scopeData[0].sample[i] = 0.5 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
+      scopeData[1].sample[i] = 0.5 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
+      scopeData[2].sample[i] = 0.25 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
+      scopeData[3].sample[i] = 0.25 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
+//      scopeData[0].sample[i] = 0.5 * 4096 * Math.sin(Math.PI * 2 * i / 400 );
+//      scopeData[1].sample[i] = 0.5 * 4096 * Math.cos(Math.PI * 2 * i / 400 );
+//      scopeData[2].sample[i] = 0.25 * 4096 * Math.cos(Math.PI * 2 * i / 400 );
+//      scopeData[3].sample[i] = 0.25 * 4096 * Math.sin(Math.PI * 2 * i / 400 );
+	}   
+   oscope.onPaint(scopeData);
+   scopeCount ++;
+   console.log('scopeCount = ',scopeCount);
+},2000);
+*/
 //--- end of ctrl.js

@@ -268,6 +268,10 @@
 			<button id='btnSetScopeCh4' class='w3-button w3-tiny w3-green' onclick='setScopeCh(3)'>SET</button>
 		</td>			
 	</tr>
+	<tr>
+			<button id='btnXyPlotOn' class='w3-button w3-tiny w3-blue' onclick='xyPlotOn(1)'>xy-PlotOn</button>
+			<button id='btnXyPlotOff' class='w3-button w3-tiny w3-red' onclick='xyPlotOn(0)'>xy-PlotOn</button>
+	</tr>
 </table>
 </div><!-- three -->
 
@@ -349,6 +353,12 @@ function setScopeCh(ch){
    console.log(chSelected[ch],scale,offset);
    sendSetScopeChCmd(ch,chSelected[ch],scale,offset);
 }
+
+function xyPlotOn(arg1){
+   xyPlotState = arg1;
+   console.log('xyPloteState = ',arg1);   
+}
+
 
 </script>
 {% endblock %}

@@ -1,5 +1,5 @@
 "use strict";
-
+var xyPlotState = 0;				// 1 scope --> xy plot
 const NO_SCOPE_DATA = 400;
 
 var oscope = (function() {
@@ -12,8 +12,8 @@ var oscope = (function() {
   var m_voffset = [];
   // these must match the initial values of the controls
   // doh! no two way data bindind
-  var m_seconds_per_div	   = 0.100;
-  var m_samples_per_second = NO_SCOPE_DATA;
+  var m_seconds_per_div	   = 60;
+  var m_samples_per_second = 1;
   var m_divisions          = 10;
   var m_yscale             = 2048;
   var m_sample_bits        = 12;
@@ -124,8 +124,7 @@ var oscope = (function() {
     if (s.length <= 0) {
       // use the smallest
       r = s[2];
-    }
-    else {
+    } else {
       // use first fit
       r = s[0];
     }
@@ -301,8 +300,6 @@ var oscope = (function() {
     t = (m_run) ? ("RUN : " + m_updates.toFixed(0)) : "STOP";
     ctx.fillStyle = (m_run) ? 'lime' : 'red';
     ctx.fillText(t,2,height-4);
-
-
   }
 
   function computeVerticalScale(vrange,yscale,height,volts) {
@@ -320,13 +317,6 @@ var oscope = (function() {
     var hs;
     var i;
 
-    // compute scale factors
-    ys = computeVerticalScale(m_vrange,m_yscale,m_height,m_volts_per_div);
-//    hs = computeHorizontalScale(m_seconds_per_div*m_divisions,m_samples_per_second,m_width);
-    hs = 1;
-
-    // compute horizonal scale
-
     ctx.save();
     ctx.translate(0,height);
     ctx.scale(1.0,-1.0);
@@ -334,32 +324,32 @@ var oscope = (function() {
     // set channel parameters
     switch(trace.channel) {
     case 0:
-      ctx.translate(xaxis[0][0],xaxis[0][1] + voffset);
+      ctx.translate(xaxis[0][0],xaxis[0][1]);
       ctx.strokeStyle = "darkgoldenrod";
       break;
     case 1:
-      ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
+      ctx.translate(xaxis[0][0],xaxis[0][1]);
       ctx.strokeStyle = "indigo";
       break;
     case 2:
-      ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
+      ctx.translate(xaxis[0][0],xaxis[0][1]);
       ctx.strokeStyle = "red";
       break;
     case 3:
-      ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
+      ctx.translate(xaxis[0][0],xaxis[0][1]);
       ctx.strokeStyle = "green";
       break;
     }
     
     // scale the trace y axis
-    // samples are Int16Array
+    hs = 1;
+    ys = 400 / 4096;
     for(i=0;i<trace.length;++i) {
-      t.push([i*hs,trace.sample[i] * ys]);
+      t.push([i*hs,(trace.sample[i]-2048) * ys]);
     }
 
     // draw it
-    drawPath(ctx,t);
-    
+    drawPath(ctx,t);    
     ctx.restore();    
     // restore context
   }
@@ -384,35 +374,46 @@ var oscope = (function() {
     onPaint(null);
   }
 
-  function onPaint(trace) {
-    // draw oscope background
-    drawBackground(m_context,m_width,m_height,m_voffset);
+  function drawXyPlot(ctx, trace1,trace2){
+    var t = [];
+    var x,y;
 
-    // update trace if running and there is a new trace
-    if (m_run & (trace !== null)) {
-      // count updates
+   ctx.fillStyle = "red";
+   
+	x = 400 * trace1[0] / 4096;
+	y = 400 * trace2[0] / 4096;		
+	ctx.fillRect(x,y,20,20);
+	
+   for(var i=0;i<trace1.length;++i) {
+		x = 400 * trace1[i] / 4096;
+		y = 400 * trace2[i] / 4096;		
+      t.push([x,y]);
+    }
+    drawPath(ctx,t);
+    ctx.restore();    
+  }
+  
+  function onPaint(trace) {
+    drawBackground(m_context,m_width,m_height,0);
+ 
+   if (m_run & (trace !== null)) {
       m_updates++;
-      // store the trace by channel
-//      m_trace[trace.channel] = trace;
       m_trace[0] = trace[0];
       m_trace[1] = trace[1];
       m_trace[2] = trace[2];
       m_trace[3] = trace[3];
     }
 
+	if(xyPlotState==1){
     // draw last traces
-    if (m_trace[0] !== null) {
-      drawTrace(m_context, m_trace[0], m_width, m_height, m_voffset[0]);
-    }
-    if (m_trace[1] !== null) {
-      drawTrace(m_context, m_trace[1], m_width, m_height, m_voffset[1]);
-    }
-    if (m_trace[2] !== null) {
-      drawTrace(m_context, m_trace[2], m_width, m_height, m_voffset[2]);
-    }
-    if (m_trace[3] !== null) {
-      drawTrace(m_context, m_trace[3], m_width, m_height, m_voffset[3]);
-    }
+    if (m_trace[0] !== null) drawXyPlot( m_context, m_trace[0].sample, m_trace[1].sample);
+	} else {
+    // draw last traces
+    if (m_trace[0] !== null) { drawTrace(m_context, m_trace[0], m_width, m_height, 0); }
+    if (m_trace[1] !== null) { drawTrace(m_context, m_trace[1], m_width, m_height, 0); }
+    if (m_trace[2] !== null) { drawTrace(m_context, m_trace[2], m_width, m_height, 0); }
+    if (m_trace[3] !== null) { drawTrace(m_context, m_trace[3], m_width, m_height, 0); }
+	}
     // draw text annotations
     drawAnnotations(m_context,m_width,m_height,m_text_size);
   }
@@ -423,8 +424,7 @@ var oscope = (function() {
 	   onPaint(null);
   }
 
-  function onVerticalOffset(channel,offset)
-  {
+  function onVerticalOffset(channel,offset){
     if ((offset < -4)||(4 < offset)) {
       return;
     }
@@ -446,10 +446,6 @@ var oscope = (function() {
     onPaint(null);
   }
 
-  /**
-   * event handler for samples per second
-   * @param samples_per_second
-   */
   function onSamplesPerSecond(samples_per_second) {
     // no zero or negative
     if (samples_per_second < Number.MIN_VALUE) {
@@ -462,11 +458,7 @@ var oscope = (function() {
     onPaint(null);0.
   }
 
-  /**
-   * set voltage range (maximum volts per sample)
-   * @param vrange
-   */
-  function onVoltageRange(vrange) {
+ function onVoltageRange(vrange) {
     m_vrange = vrange;
     onPaint(null);
   }
@@ -510,8 +502,10 @@ var oscope = (function() {
     m_canvas = $("#oscope")[0];
 //    m_width  = m_canvas.width  = size.width;
 //    m_height = m_canvas.height = size.height;
-    m_width  = m_canvas.width  = NO_SCOPE_DATA;
-    m_height = m_canvas.height = NO_SCOPE_DATA;
+//    m_width  = m_canvas.width  = NO_SCOPE_DATA;
+//    m_height = m_canvas.height = NO_SCOPE_DATA;
+    m_width  = m_canvas.width  = 400;
+    m_height = m_canvas.height = 400;
     m_h2     = m_height / 2;
     rescale(m_width,m_height);
     onPaint(null);

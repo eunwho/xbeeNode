@@ -17,8 +17,8 @@ function shutdown(callback){
 
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
-const port = new SerialPort('/dev/ttyS0',{
-//const port = new SerialPort('/dev/ttyUSB0',{
+//const port = new SerialPort('/dev/ttyS0',{
+const port = new SerialPort('/dev/ttyUSB1',{
 //const port = new SerialPort('/dev/ttyAMA1',{
 //const port = new SerialPort('COM4',{
    //baudRate: 500000
@@ -220,7 +220,6 @@ parser.on('data',function (data){
 			return;
 		}
 	}
-
 
 	if ( command_data < 100 ) {
 		var rx_data = data.slice(17,24);
