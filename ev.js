@@ -17,8 +17,8 @@ function shutdown(callback){
 
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
-//const port = new SerialPort('/dev/ttyS0',{
-const port = new SerialPort('/dev/ttyUSB1',{
+const port = new SerialPort('/dev/ttyS0',{
+//const port = new SerialPort('/dev/ttyUSB1',{
 //const port = new SerialPort('/dev/ttyAMA1',{
 //const port = new SerialPort('COM4',{
    //baudRate: 500000
@@ -306,7 +306,8 @@ parser.on('data',function (data){
   		for ( i = 0; i < NO_SCOPE_DATA ; i++){
   			lsb = (buff[ i*3 + 2 + offset] & 0x0f) * 1 + (buff[i*3 + 1 + offset] & 0x0f) * 16;
   			msb = ( buff[i*3 + offset ] & 0x0f ) * 256;
-  			tmp = msb + lsb - 2048;
+  			//tmp = msb + lsb - 2048;
+  			tmp = msb + lsb;
 			scope.data.push(tmp);
 		}
 		myEmitter.emit('mScope', scope);

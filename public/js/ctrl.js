@@ -451,15 +451,11 @@ var scopeCount = 0;
 /*
 setInterval(function(){
 
-   for( var i = 0 ; i < 300 ; i++ ){
+   for( var i = 0 ; i < 400 ; i++ ){
       scopeData[0].sample[i] = 0.5 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
       scopeData[1].sample[i] = 0.5 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
       scopeData[2].sample[i] = 0.25 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
       scopeData[3].sample[i] = 0.25 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
-//      scopeData[0].sample[i] = 0.5 * 4096 * Math.sin(Math.PI * 2 * i / 400 );
-//      scopeData[1].sample[i] = 0.5 * 4096 * Math.cos(Math.PI * 2 * i / 400 );
-//      scopeData[2].sample[i] = 0.25 * 4096 * Math.cos(Math.PI * 2 * i / 400 );
-//      scopeData[3].sample[i] = 0.25 * 4096 * Math.sin(Math.PI * 2 * i / 400 );
 	}   
    oscope.onPaint(scopeData);
    scopeCount ++;
