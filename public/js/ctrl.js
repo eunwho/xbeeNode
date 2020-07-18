@@ -20,15 +20,38 @@ graphData[3] = { channel:3,length:dataLength,sample:[dataLength]};
 graphData[4] = { channel:4,length:dataLength,sample:[dataLength]};
 graphData[5] = { channel:5,length:dataLength,sample:[dataLength]};
 
-var scopeData = new Array();
-
-scopeData[0] = { channel:0,length:dataLength,sample:[NO_SCOPE_DATA]};
-scopeData[1] = { channel:1,length:dataLength,sample:[NO_SCOPE_DATA]};
-scopeData[2] = { channel:2,length:dataLength,sample:[NO_SCOPE_DATA]};
-scopeData[3] = { channel:3,length:dataLength,sample:[NO_SCOPE_DATA]};
-
 
 // var inputOffset = [1817,1817,2121,2009];
+var chart = nv.models.lineWithFocusChart();
+
+chart.xAxis
+	// .tickFormat(d3.format(',f'));
+   .tickFormat(function(d) { 
+		return d3.time.format('%X')(new Date(d));
+});
+
+chart.x2Axis
+	// .tickFormat(d3.format(',f'));
+   .tickFormat(function(d) { 
+		return d3.time.format('%m/%Y')(new Date(d));
+	});
+
+chart.yAxis
+	.tickFormat(d3.format(',.1f'));
+
+chart.y2Axis
+	.tickFormat(d3.format(',.1f'));
+
+chart.yDomain([-5,100]);
+
+chart.color(['red','green','yellow']);
+
+var tmp = new Date();
+
+var dhtData = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp+1000, "y":10}]},
+	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp+1000, "y":20}]}
+];
+
 
 function graphClear(){
    for( var j = 0 ; j < 6 ; j++){
@@ -94,14 +117,11 @@ function gaugeInit(arg){
    $(a).attr('data-highlights',arg.alarm);
 }
 
+		
 $("document").ready(function() {
-  if (oscope) {
-    oscope.init();
-  }
    var dummy = {0:0};
 
    graphInverter.init();
-
    gaugeInit(gaugeSpeed);
    gaugeInit(gaugeRefOut);
    gaugeInit(gaugeI10);
@@ -348,25 +368,6 @@ function btnOptionSendCmd(){
     mouse_state = 0;
   });
 
-  $('#oscope').on('mousemove',function(event) {
-    switch(mouse_state) {
-    case 0:
-      // do nothing
-      break;
-    case 1:
-      oscope.onCursorMove(event.offsetX,event.offsetY);
-      var temp = (225 - event.offsetY) * 4096 / 450;
-      var x = document.getElementById('vcursor1').checked;
-
-      if( x ) {
-         document.getElementById('curVerStartPosi').innerHTML = parseInt(temp);
-      }else{
-         document.getElementById('curVerEndPosi').innerHTML = parseInt(temp);
-      }
-      break;
-    }
-  });
-
 socket.on('scope', function (msg) {
    var chanel = msg.Ch - 49;
    console.log('received scope data chanel = '+ chanel);
@@ -407,59 +408,73 @@ socket.on('trace', function (msg) {
 
 socket.on('graph', function (msg) {
  
-//   console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
-//   console.log('Graph1 =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.Power,' ref_out = ',msg.Ref,'Vdc = ',msg.Vdc);
-   graphCount = ( graphCount < 600 ) ? graphCount + 1 : 0 ;
-
-   graphData[0].sample[graphCount] = msg.Graph1;
-   graphData[1].sample[graphCount] = msg.Graph2; 
-   graphData[2].sample[graphCount] = msg.Graph3; 
-   graphData[3].sample[graphCount] = msg.Graph4;; 
-   graphData[4].sample[graphCount] = msg.Graph5; 
-   graphData[5].sample[graphCount] = msg.Graph6; 
-   graphInverter.onPaint(graphData);
-
-
-//convert to
-
-   var speed =   ((msg.rpm  -2048)/ 2048) * 5000;
-   var ref_out = ((msg.Ref  -2048)/ 2048) * 500;
-   var I_rms =   ((msg.Irms -2048)/ 2048) * I_SENS_VALUE;
-   var Vdc =     ((msg.Vdc  -2048)/ 2048) * 1000;
-
-   console.log('rpm =',speed,'Irms =',I_rms,' ref_out = ',ref_out,'Vdc = ',Vdc);
-
-   if ( speed > 6000) speed = 6000;
-   if ( speed < -6000) speed = -6000;
-
-   if ( ref_out >  300 ) ref_out = 300;
-   if ( ref_out < -300 ) ref_out = -300;
-
-   if ( I_rms >  500 ) I_rms = 500;
-   if ( I_rms <    0 ) I_rms = 0;
-
-   if ( Vdc  >  800 ) Vdc = 800;
-   if ( Vdc  <    0 ) Vdc = 0;
-  
-   $('#gauge1').attr('data-value', speed);
-   $('#gauge2').attr('data-value', Math.floor(ref_out + 0.5));
-   $('#gauge3').attr('data-value', I_rms);
-   $('#gauge4').attr('data-value', Vdc);
 });
+
+socket.on('xbee', function (data) {
+
+	var dhtSensor;
+	var getData1 = {"x":0,"y":0};
+	var getData2 = {"x":0,"y":0};
+	var tmpDate = new Date();
+
+
+   var tmpIn = data.split(",");
+
+	var tmp1 = tmpIn[1];
+	var tmp2 = tmpIn[2].split(":");
+	var tmp3 = tmpIn[3].split(":");
+
+	//console.log(data);
+	//console.log(tmpIn);
+	//console.log ("tmp1 == ", tmp1, "tmp2[0] == ", tmp2[0], "tmp3[0] == ",tmp3[0]);
+
+	if( (tmp1 == "G001") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
+			getData1.x = tmpDate;
+			getData1.y = tmp2[1] * 1.0;
+
+			getData2.x = tmpDate;
+			getData2.y = tmp3[1] * 1.0;
+			
+			dhtData[0].values.push(getData1);
+			dhtData[1].values.push(getData2);
+
+			// console.log(getData1,getData2);
+		
+			d3.select('#chart svg').datum(dhtData).transition().duration(5)
+   	 		.call(chart);
+    
+			chart.update;
+
+	} else if( tmp1[1] == "G110"){
+/*	
+			getData1.x = tmpDate;
+			getData1.y = tmp2[1];
+
+			getData2.x = tmpDate;
+			getData2.y = tmp3[1];
+		
+			d3.select('#chart svg').datum(dhtData).transition().duration(5)
+   	 		.call(chart);
+    
+			chart.update;
+*/
+	}
+	
+/*	
+	try{
+		var str = "ROOM [405] : Temperature = " + dhtTemp+ " \260C : ";
+		str += "Humidity = " +  dhtHumi + "%"+"\n";
+		document.getElementById("title").innerHTML = str;
+	} catch ( err){
+		console.log(err.message);
+	}
+*/
+ 
+});
+
 var scopeCount = 0;
 
-/*
 setInterval(function(){
 
-   for( var i = 0 ; i < 400 ; i++ ){
-      scopeData[0].sample[i] = 0.5 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
-      scopeData[1].sample[i] = 0.5 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
-      scopeData[2].sample[i] = 0.25 * 2048 * Math.sin(Math.PI * 2 * i / 400 )+2048;
-      scopeData[3].sample[i] = 0.25 * 2048 * Math.cos(Math.PI * 2 * i / 400 )+2048;
-	}   
-   oscope.onPaint(scopeData);
-   scopeCount ++;
-   console.log('scopeCount = ',scopeCount);
 },2000);
-*/
 //--- end of ctrl.js

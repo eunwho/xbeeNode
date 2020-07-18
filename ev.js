@@ -15,6 +15,12 @@ function shutdown(callback){
     exec('shutdown now', function(error, stdout, stderr){ callback(stdout); });
 }
 
+/*
+var port = new SerialPort('/dev/ttyAMA0',{
+    baudRate: 115200,
+    parser: SerialPort.parsers.readline('\n')
+});
+*/
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
 //const port = new SerialPort('/dev/ttyS0',{
@@ -23,7 +29,7 @@ const port = new SerialPort('/dev/ttyUSB0',{
 //const port = new SerialPort('COM4',{
    //baudRate: 500000
   // baudRate: 115200
-   baudRate: 9600
+   baudRate: 38400
 });
 
 const parser = new Readline();
@@ -195,6 +201,10 @@ io.on('connection', function (socket) {
 		socket.emit('scope',data);
 	});    
 
+	myEmitter.on('xbee',function(data){
+		socket.emit('xbee',data);
+	});    
+
 });
 
 var graphData = { rpm:0,Irms:0,Power:0,Ref:0,Vdc:0,Graph1:0,Graph2:0,Graph3:0,Graph4:0,Graph6:0};
@@ -207,113 +217,14 @@ parser.on('data',function (data){
 	var y =0;
 	
 	var buff = new Buffer(data);
-	var command_addr = parseInt(buff.slice(4,7));
-	var command_data = parseFloat(buff.slice(8,16));
+	var tmp1 = data.split(",");
 
 	console.log(data);
+	//console.log(tmp1);
+	//console.log(tmp1[1]);
+	
+	myEmitter.emit('xbee',data);
 
-	if(( buff.length < 16 ) || ( command_addr !== 900 )){
-		if( command_addr == 901 ){ 
-			myEmitter.emit('mCodeList', data);
-			return;
-		} else {
-			myEmitter.emit('mMessage', data);
-			return;
-		}
-	}
-
-	if ( command_data < 100 ) {
-		var rx_data = data.slice(17,24);
-		var buff2 = data.substr(24);
-   	var buff = new Buffer(buff2,'utf8');
-
-   	var i = 0;
-   	var lsb = (buff[ i*3 + 2] & 0x0f) * 1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	var msb = ( buff[i*3] & 0x0f ) * 256;
-   	var tmp = msb + lsb;
-		graphData.rpm = tmp;
-
-   	i = 1;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1]  & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-		graphData.Irms = tmp;
-
-   	i = 2;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-		graphData.Power = tmp;
-
-   	i = 3;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-		graphData.Ref = tmp;
-
- 	i = 4;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Vdc = tmp;
-
- 	i = 5;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph1 = tmp;
-
- 	i = 6;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph2 = tmp;
-
- 	i = 7;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph3 = tmp;
-
- 	i = 8;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph4 = tmp;
-
- 	i = 9;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph5 = tmp;
-
- 	i = 10;
-   	lsb = (buff[ i*3 + 2] & 0x0f)*1 + (buff[i*3 + 1] & 0x0f) * 16;
-   	msb = ( buff[i*3] & 0x0f ) * 256;
-   	tmp = msb + lsb;
-	graphData.Graph6 = tmp;
-
-	myEmitter.emit('mGraph', graphData);
-		return;
-	} else if( command_data > 99 ) {
-		var i, j, lsb, msb, tmp;
-		var offset = 4;
-
-   	var buff2 = data.substr(17);
-   	var buff = new Buffer(buff2,'utf8');
-		var scope = {Ch:0,data:[]};
-
-		scope.Ch = buff[2];
-  		for ( i = 0; i < NO_SCOPE_DATA ; i++){
-  			lsb = (buff[ i*3 + 2 + offset] & 0x0f) * 1 + (buff[i*3 + 1 + offset] & 0x0f) * 16;
-  			msb = ( buff[i*3 + offset ] & 0x0f ) * 256;
-  			//tmp = msb + lsb - 2048;
-  			tmp = msb + lsb;
-			scope.data.push(tmp);
-		}
-		myEmitter.emit('mScope', scope);
-		return;
-	}	
 });
 
 function sleepFor( sleepDuration ){

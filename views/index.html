@@ -2,8 +2,19 @@
 {% block content %}
 <!-- end of goole gauge -->
 <div class="container" align="center">
+
+<h1> 양돈장 온도/습도 관리 시스템 </h1> 
+
+		<div id="title"> Temperature & Humidity Room [405] </div>
+		<div id="clock"> clock </div>
+		<div id="stopbox">
+			<button id="btnNoVac" onclick="btnExit()">동작정지</buttom>
+		</div>
+	<div id="chart">
+		<svg style=" width:1024; height:480; "></svg>
+	</div>
+
 <!--h1 align ="center" style="margin:30px;"> DONG HO INVERTR MONITORING SYSTEM </h1 --> 
-<h1> DONG HO INVERTER MONITORING SYSTEM </h1> 
 </br>
 
 <div class="wrapper1" align="center">
@@ -82,203 +93,8 @@
 </table>
 </div>
 
-<div class="wrapper2">
-
-	<div class="g2-one" align="right">
-		<!-- div id='codeEditResult' class='csEditResult' style="width:300px,height:50px">code result</div> -->
-		<textarea id='codeEditResult' class='csEditResult' rows="2" cols="38">	</textarea>
-		Code <input type="number" id="txtCodeEdit1" style="width:70px" min="0" max="300" value="0"> 
-		Value <input type="number" id="txtCodeEdit2" style="width:70px" min="0" max="8000" value="0">
-		<button id='btnReadCode' 	class='w3-circle w3-green'  onclick='btnReadCode()'>R</button>
-		<button id='btnWriteCode' 	class='w3-circle w3-red'    onclick='btnWriteCode()'>W</button>		 
-		</br>
-		</br>
-		<select id="idCmdSelect">
-			<option value="0">READ SENSOR ADC</option>
-			<option value="1">READ RPM etc </option>
-			<option value="2">RESET FROM TRIP</option>
-			<option value="3">READ ALL CODES</option>
-			<option value="4">READ PWMTRIP&INPUT </option>
-			<option value="5">RESET CODE VALUES</option>
-			<option value="6">READ TRIP RECORD</option>
-		</select>
-		<button id='btnWriteCode' 	class='w3-button w3-round w3-green' onclick='btnOptionSendCmd()'>Send</button>
-		</br>
-		</br>
-		<textarea id='txtCodeTable' class='csTxtCodeTable' rows="10" cols="38">	</textarea>
-	</div> <!-- one -->
-
-	<div class="g2-two" align="right">
-		<div id="oscope-parent" class="csOscope" align="center">
-			<canvas id="oscope" class="oscope-canvas" width='400' height='400' ></canvas>
-		</div>
-	</div> <!-- two -->
-
-	<div class="g2-three" align="left">
-
-<table id= "tabG2">
-	<tr>
-		<td>
-			<select name="ch1_list1" onChange="updateCh1Select(this.options.selectedIndex)">
-				<option selected> CH-1 </option> 
-				<option value='I'>Amp </option>
-				<option value='V'>Volt </option>
-				<option value='adc'>ADC </option>
-				<option value='pwm'>PWM </option>
-				<option value='angle'>theta </option>
-			</select>
-			<select name="ch1_list1_list2" onClick="selectScopeCh(0,this.options[this.options.selectedIndex].value)">
-			</select>
-		</td> 
-		<td> 
-			<select id="idScaleCh1">
-			   <option value="0.1"  >0.1/div</option>
-			   <option value="0.2"  >0.2/div</option>
-			   <option value="0.5"  >0.5/div</option>
-			   <option value="1.0"  >1.0/div</option>
-			   <option value="2.0"  >2.0/div</option>
-			   <option selected value="5.0">5.0/div</option>
-			   <option value="10." >10./div</option>
-			   <option value="20." >20./div</option>
-			   <option value="50." >50./div</option>
-			   <option value="100">100/div</option>
-			   <option value="200">200/div</option>
-			   <option value="500">500/div</option>
-         </select>
-		</td>
-	</tr>
-	<tr>
-		<td><font color="gold">OFFSET</font>
-			<!-- input id='idOffsetCh1' type="number" class="offset" min="0" max="9999" value="0" -->
-			<input id='idOffsetCh1' type="number" class="offset" value="0">
-		</td>
-		<td>
-			<button id='btnSetScopeCh1' class='w3-button w3-tiny w3-yellow' onclick='setScopeCh(0)'>SET</button>
-		</td>			
-	</tr>
-
-	<tr>
-		<td>
-			<select name="ch2_list1" onChange="updateCh2Select(this.selectedIndex)">
-				<option selected>CH-2</option>
-				<option value='I'>Amp</option>
-				<option value='V'>Volt</option>
-				<option value='adc'>ADC</option>
-				<option value='pwm'>PWM</option>
-				<option value='angle'>theta </option>
-			</select>
-			<select name="ch2_list1_list2" onClick="selectScopeCh(1,this.options[this.options.selectedIndex].value)">
-			</select>
-		</td> 
-		<td> 
-			<select id="idScaleCh2">
-				<option value="0.1">0.1/div</option>
-			   <option value="0.2">0.2/div</option>
-			   <option value="0.5">0.5/div</option>
-			   <option value="1.0">1.0/div</option>
-			   <option value="2.0">2.0/div</option>
-			   <option selected value="5.0">5.0/div</option>
-			   <option value="10.">10./div</option>
-			   <option value="20.">20./div</option>
-			   <option value="50." >50./div</option>
-			   <option value="100">100/div</option>
-			   <option value="500">500/div</option>
-         </select>
-		</td>
-	</tr>
-	<tr>
-		<td><font color="blue">OFFSET</font> 
-			<input id='idOffsetCh2' type="number" class="offset" value="0">
-		</td>
-		<td>
-			<button id='btnSetScopeCh2' class='w3-button w3-tiny w3-blue' onclick='setScopeCh(1)'>SET</button>
-		</td>			
-	</tr>
-	<tr>
-		<td>
-			<select name="ch3_list1" onChange="updateCh3Select(this.selectedIndex)">
-				<option selected>CH-3</option>
-				<option value='I'>Amp</option>
-				<option value='V'>Volt</option>
-				<option value='adc'>ADC</option>
-				<option value='pwm'>PWM</option>
-				<option value='angle'>theta </option>
-			</select>
-			<select name="ch3_list1_list2" onClick="selectScopeCh(2,this.options[this.options.selectedIndex].value)">
-			</select>
-		</td> 
-		<td> 
-			<select id="idScaleCh3">
-				<option value="0.1">0.1/div</option>
-			   <option value="0.2">0.2/div</option>
-			   <option value="0.5">0.5/div</option>
-			   <option value="1.0">1.0/div</option>
-			   <option value="2.0">2.0/div</option>
-			   <option selected value="5.0">5.0/div</option>
-			   <option value="10.">10./div</option>
-			   <option value="20.">20./div</option>
-			   <option value="50." >50./div</option>
-			   <option value="100">100/div</option>
-			   <option value="500">500/div</option>
-         </select>
-		</td>
-	</tr>
-	<tr>
-		<td><font color="hotpink">OFFSET</font>
-			<input id='idOffsetCh3' type="number" class="offset" value="0">
-		</td>
-		<td>
-			<button id='btnSetScopeCh3' class='w3-button w3-tiny w3-pink' onclick='setScopeCh(2)'>SET</button>
-		</td>			
-	</tr>
-	<tr>
-		<td>
-			<select name="ch4_list1" onChange="updateCh4Select(this.selectedIndex)">
-				<option selected>CH-4</option>
-				<option value='I'>Amp</option>
-				<option value='V'>Volt</option>
-				<option value='adc'>ADC</option>
-				<option value='pwm'>PWM</option>
-				<option value='angle'>theta </option>
-			</select>
-			<select name="ch4_list1_list2" onClick="selectScopeCh(3,this.options[this.options.selectedIndex].value)">
-			</select>
-		</td> 
-		<td> 
-			<select id="idScaleCh4">
-				<option value="0.1">0.1/div</option>
-			   <option value="0.2">0.2/div</option>
-			   <option value="0.5">0.5/div</option>
-			   <option value="1.0">1.0/div</option>
-			   <option value="2.0">2.0/div</option>
-			   <option selected value="5.0">5.0/div</option>
-			   <option value="10.">10./div</option>
-			   <option value="20.">20./div</option>
-			   <option value="50." >50./div</option>
-			   <option value="100">100/div</option>
-			   <option value="500">500/div</option>
-         </select>
-		</td>
-	</tr>
-	<tr>
-		<td><font color="palegreen">OFFSET</font>
-			<input id='idOffsetCh4' type="number" class="offset" value="0">
-		</td>
-		<td>
-			<button id='btnSetScopeCh4' class='w3-button w3-tiny w3-green' onclick='setScopeCh(3)'>SET</button>
-		</td>			
-	</tr>
-	<tr>
-			<button id='btnXyPlotOn' class='w3-button w3-tiny w3-blue' onclick='xyPlotOn(1)'>xy-PlotOn</button>
-			<button id='btnXyPlotOff' class='w3-button w3-tiny w3-red' onclick='xyPlotOn(0)'>xy-PlotOn</button>
-	</tr>
-</table>
-</div><!-- three -->
-
-</div><!-- wrapper -->
-
 <div align = "center" class='tail' style="margin:20px">
-	<span class="title1 titleName"> Inverter Monitoring System by Dong-Ho Power Electronic ( T.E.L.82-51-262-7532 ) </span>
+	<span class="title1 titleName"> Temperature/Humidity  Monitoring System by Dong-Ho Power Electronic ( T.E.L.82-51-262-7532 ) </span>
 </div> <!-- tail-->
 
 </div> <!-- container -->
