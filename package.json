@@ -19,7 +19,7 @@
     "express": "^4.12.4",
     "i2c-bus": "^4.0.1",
     "jquery": "^3.2.1",
-    "lodash": "^3.7.0",
+    "lodash": "^4.17.19",
     "morgan": "^1.5.3",
     "serialport": "^6.2.2",
     "serve-favicon": "^2.2.1",
