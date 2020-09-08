@@ -407,8 +407,96 @@ socket.on('trace', function (msg) {
 // power scale 10k, 50k, 100k 500k
 
 socket.on('graph', function (msg) {
- 
+	
+	var tmpDate = new Date();
+	var getData1 = {"x":tmpDate,"y":25};
+	var getData2 = {"x":tmpDate,"y":90};
+
+	var promise = test1(msg);
+	
+	promise
+	.then(function(result){
+		dhtData[0].values = result[0];
+		dhtData[1].values = result[1];
+
+		console.log(dhtData);
+	
+		d3.select('#chart svg').datum(dhtData).transition().duration(5)
+   		.call(chart);
+	
+		chart.update;
+	})	
+	.catch(function(reject){
+		console.log(reject);
+	});				
 });
+
+function test1(docs){
+
+	return new Promise(function(resolve,reject){
+
+	var sequence = Promise.resolve();
+
+	var tmp =[[],[]];
+	var retu =[[],[]];
+	var results= 0;
+	var maxIndex = docs.length;
+
+	for ( var i = 0 ; i < maxIndex ; i++ ){
+		(function(){
+			var closInde = i;
+			tmp[0] = docs[0][closInde];
+			tmp[1] = docs[1][closInde];
+			
+			sequence = sequence.then(function(){
+				return getTest2(tmp);
+			})
+			.then(function(results){
+				retu[0].push(results[0]);
+				retu[1].push(results[1]);				
+				if(closInde == (maxIndex -1) ) {
+					console.log(retu);
+					resolve(retu);
+				}	
+			})
+			.catch(function(err){
+				console.log('get DbTable error');
+				console.log(err);
+				reject(err);				
+			}) 
+		}())
+	}
+	});
+}	
+
+function getTest2(arg1){
+
+	return new Promise(function(resolve,reject){
+
+	try {
+	var dateTmp = Date(arg1[0].x);
+
+	var retu =[[],[]];
+	var getData1 = {"x":0,"y":0};
+	var getData2 = {"x":0,"y":0};
+	
+   getData1.x = dateTmp;
+   getData2.x = dateTmp;
+
+   getData1.y = arg1[0].y;
+   getData2.y = arg1[1].y;
+
+	console.log( getData1.y , getData2.y ); 
+   retu[0] = getData1;
+   retu[1] = getData2;
+	resolve(retu);
+	}
+	catch (err) {
+		 reject(0);
+	}
+	});
+}	
+
 
 socket.on('xbee', function (data) {
 
@@ -417,18 +505,13 @@ socket.on('xbee', function (data) {
 	var getData2 = {"x":0,"y":0};
 	var tmpDate = new Date();
 
-
    var tmpIn = data.split(",");
 
 	var tmp1 = tmpIn[1];
 	var tmp2 = tmpIn[2].split(":");
 	var tmp3 = tmpIn[3].split(":");
 
-	//console.log(data);
-	//console.log(tmpIn);
-	//console.log ("tmp1 == ", tmp1, "tmp2[0] == ", tmp2[0], "tmp3[0] == ",tmp3[0]);
-
-	if( (tmp1 == "G001") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
+	if( (tmp1 == "G110") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
 			getData1.x = tmpDate;
 			getData1.y = tmp2[1] * 1.0;
 
@@ -438,37 +521,16 @@ socket.on('xbee', function (data) {
 			dhtData[0].values.push(getData1);
 			dhtData[1].values.push(getData2);
 
-			// console.log(getData1,getData2);
-		
-			d3.select('#chart svg').datum(dhtData).transition().duration(5)
+//			console.log(dhtData);
+			d3.select('#chart svg').datum(dhtData).transition().duration(10)
    	 		.call(chart);
     
 			chart.update;
 
-	} else if( tmp1[1] == "G110"){
-/*	
-			getData1.x = tmpDate;
-			getData1.y = tmp2[1];
+	} else if( tmp1[1] == "G001"){
 
-			getData2.x = tmpDate;
-			getData2.y = tmp3[1];
-		
-			d3.select('#chart svg').datum(dhtData).transition().duration(5)
-   	 		.call(chart);
-    
-			chart.update;
-*/
 	}
 	
-/*	
-	try{
-		var str = "ROOM [405] : Temperature = " + dhtTemp+ " \260C : ";
-		str += "Humidity = " +  dhtHumi + "%"+"\n";
-		document.getElementById("title").innerHTML = str;
-	} catch ( err){
-		console.log(err.message);
-	}
-*/
  
 });
 

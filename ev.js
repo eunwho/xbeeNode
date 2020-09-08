@@ -6,6 +6,28 @@ var digiOut = 0xff;
 var graphOnOff = 0;
 var scopeOnOff = 0;
 
+
+var Promise = require('promise');
+//--- mongoose setting
+var mongoose = require('mongoose');
+
+mongoose.Promise = global.Promise;
+
+mongoose.connect('mongodb://localhost/wsns0');
+
+var db = mongoose.connection;
+db.on('error',console.error.bind(console,'mongoose connection error'));
+db.once('open',function(){
+	console.log('Ok db connected');
+});
+
+var wsnSchema = mongoose.Schema({
+	wsnData: String,
+	date:{type:Date,default:Date.now}
+});
+
+var wsnDB1 = mongoose.model('wsnDB1',wsnSchema);
+
 //--- start of digital inout routine
 
 var exec = require('child_process').exec;
@@ -145,8 +167,33 @@ io.on('connection', function (socket) {
 	});
 
 	socket.on('codeEdit',function(msg){
-		console.log('scoket on codeEdit =',msg);
-		port.write(msg);
+		//console.log('scoket on codeEdit =',msg);
+		//port.write(msg);
+		var masterName = "G110";
+		var promise = dbFindTRTH(masterName,1);
+
+		promise
+		.then(function(docs){
+      	console.log('----------------------------------');
+      	console.log('     promise then');
+      	console.log('----------------------------------');
+      
+			var promise = getTable(docs);	
+			
+			promise
+			.then(function (result) {		
+				console.log(result);
+				socket.emit('graph',result)
+			})
+			.catch (function(reject){
+				console.log( "getTable Err");
+			});	
+   	})
+   	.catch(function(err){
+      	console.log('promise catch');
+      	console.log(err);
+   	});
+
 	});
 
 	socket.on('getCodeList',function(msg){
@@ -194,7 +241,8 @@ io.on('connection', function (socket) {
 	});    
 
 	myEmitter.on('mGraph',function(data){
-		socket.emit('graph',data);
+		//socket.emit('graph',data);
+		socket.emit('graph',retVal);
 	});    
 
 	myEmitter.on('mScope',function(data){
@@ -219,10 +267,24 @@ parser.on('data',function (data){
 	var buff = new Buffer(data);
 	var tmp1 = data.split(",");
 
+	console.log("tmp[0].length =" + tmp1[0].length);
+
+	var startNo = tmp1[0].length;
+	var endNo = data.length;
+ 
+	console.log(data.slice(startNo+1,endNo));
+
 	console.log(data);
-	//console.log(tmp1);
-	//console.log(tmp1[1]);
-	
+
+	var dataIn = data.slice(startNo+1,endNo);
+	console.log(dataIn);
+
+	var wsnIn = new wsnDB1({wsnData:dataIn});
+	wsnIn.save( function( err, wsnIn ){
+		if(err) return console.error(err);	
+	    console.log('SAVED: '+dataIn);
+	});			
+
 	myEmitter.emit('xbee',data);
 
 });
@@ -282,6 +344,120 @@ process.on('exit', function () {
     console.log('\nShutting down, performing GPIO cleanup');
     process.exit(0);
 });
+
+var dbFindTRTH = function ( param ,term){
+
+	return new Promise(function(resolve, reject){		
+	
+	var masterName = param;
+	var tmp = term;
+
+	var graphDay = 2;
+
+	//console.log('sensorId_tmp : ' + tmp);
+
+	wsnDB1.find(
+		{$and:[{ 
+			"date" :{ 
+				$lte:new Date() }
+				// $gte: new Date( new Date().setDate( new Date().getDate()-graphDay))}
+			},{"wsnData":{$regex:masterName}},
+			{"wsnData":{$regex:"TR"}}
+		]},
+		{'wsnData':true,_id:false,'date':true},
+		function ( err, docs){
+			if( err ) {
+				reject(err);
+			}else{
+				resolve(docs);
+			}
+		}
+	).limit(10);	
+//	);	
+	}); // return promise 	
+}
+
+ 
+
+var dhtData = [ {"key": "Temperature","values":[]},
+   					{"key": "Humidity"   ,"values":[]}
+						];
+
+function getTable(docs){
+
+	return new Promise(function(resolve,reject){
+
+	var sequence = Promise.resolve();
+
+	var retu =[[],[]];
+	var results= 0;
+	var maxIndex = docs.length;
+
+	for ( var i = 0 ; i < maxIndex ; i++ ){
+		(function(){
+			var closInde = i;
+			var records = docs[closInde];
+			sequence = sequence.then(function(){
+				return getTempHumi(records);
+			})
+			.then(function(results){
+				retu[0].push(results[0]);
+				retu[1].push(results[1]);				
+				if(closInde == (maxIndex -1) ) {
+					console.log(retu);
+					resolve(retu);
+				}	
+			})
+			.catch(function(err){
+				console.log('get DbTable error');
+				console.log(err);
+				reject(err);				
+			}) 
+		}())
+	}
+	});
+}	
+
+function getTempHumi(arg1){
+
+	return new Promise(function(resolve,reject){
+
+	// var dateTmp = Date(arg1.date);
+	var dateTmp = arg1.date;
+
+	var retu =[[],[]];
+	var tmp = new Date();
+	var tmpDate = new Date();
+	var getData1 = {"x":tmpDate,"y":0};
+	var getData2 = {"x":tmpDate,"y":0};
+	
+	var masterMsg = arg1.wsnData;
+	var tmpIn = masterMsg.split(",");
+
+   var tmp1 = tmpIn[0];
+   var tmp2 = tmpIn[1].split(":");
+   var tmp3 = tmpIn[2].split(":");
+
+  	if( (tmp1 == "G110") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
+      getData1.x = dateTmp;
+      getData1.y = tmp2[1] * 1.0;
+
+      getData2.x = dateTmp;
+      getData2.y = tmp3[1] * 1.0;
+
+		//console.log(getData2.x);
+      retu[0].push(getData1);
+      retu[1].push(getData2);
+		resolve(retu);
+	}
+	else reject(0);
+	});
+}	
+
+setTimeout(function() {
+
+}, 10*1000);
+
 
 //--- end of scope
 
