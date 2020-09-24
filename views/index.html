@@ -2,179 +2,38 @@
 {% block content %}
 <!-- end of goole gauge -->
 <div class="container" align="center">
-
-<h1> 양돈장 온도/습도 관리 시스템 </h1> 
+<div class="wrapper1" align="center">
+	<div class="g1-one" align="center">
+		<h1> 양돈장 온도/습도 관리 시스템 </h1> 
 
 		<div id="title"> Temperature & Humidity Room [405] </div>
 		<div id="clock"> clock </div>
 		<div id="stopbox">
 			<button id="btnNoVac" onclick="btnExit()">동작정지</buttom>
 		</div>
-	<div id="chart">
-		<svg style=" width:1024; height:480; "></svg>
-	</div>
-
-<!--h1 align ="center" style="margin:30px;"> DONG HO INVERTR MONITORING SYSTEM </h1 --> 
-</br>
-
-<div class="wrapper1" align="center">
-	<div class="g1-one" align="center">
-      <canvas id="gauge1" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200"></canvas>
 	</div>
 
 	<div class="g1-two" align="center">
-      <canvas id="gauge2" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200"></canvas>
+		<button>TWO</button>	
 	</div>
 
 	<div class="g1-three" align="center">
-		<div id="plot1-parent" class="csPlot1" align="center">
-			<canvas id="plot1" class="oscope-canvas oscope-canvas2" width="600" height="300" align="center"></canvas>
-		</div>
+      <canvas id="gauge1" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200"></canvas>
 	</div>
 
 	<div class="g1-four" align="center">
-		<table align="center" width="100%">
-			<tr>
-      		<td align = "center" width="20%" height="50px">
-         		<button class='w3-button w3-round w3-purple' onclick='btnRunMotor()' >ON MOTOR</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-green'  onclick='btnSpeedUp()'>SPEED UP</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-blue'   onclick='btnStartGraph()'>ON GRAPH</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-yellow' onclick='btnStartScope()'>ON SCOPE</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-indigo' onclick='btnSpeedUp1()'>SPEED UP 1%</button>
-      		</td>
-   		</tr> 
-   		<tr>
-      		<td align = "center" height="50px">
-         		<button class='w3-button w3-round w3-red'    onclick='btnStopMotor()'>STOP MOTOR</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-red'  onclick='btnSpeedDown()'>SPEED DOWN</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-red'   onclick='btnStopGraph()'>OFF GRAPH</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-red' onclick='btnStopScope()'>OFF SCOPE</button>
-      		</td>
-      		<td align = "center">
-         		<button class='w3-button w3-round w3-red' onclick='btnTripReset()'>TRIP RESET</button>
-      		</td>
-   		</tr> 
-		</table>
-	</div><!-- gi-four -->
+		<div id="chart1">
+			<svg style=" width:1024; height:200; "></svg>
+		</div>
+	</div>
 	<div class="gi-five" align="center">
-      <canvas id="gauge3" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200"></canvas>
+      <canvas id="gauge2" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200"></canvas>
 	</div>
 	<div class="g1-six" align="center">
-      <canvas id="gauge4" class='cssGauge' data-type="radial-gauge" data-value-box="true" data-width="200" data-height="200" align="left"></canvas>
+		<div id="chart2">
+			<svg style=" width:1024; height:200; "></svg>
+		</div>
 	</div>
 </div><!-- wrapper1 -->
-
-<div>
-<table align="center">
-	<tr>
-      <td height = "50" width="4%" align="center"> 경과 : </td>
-      <td width="20%" id = "clockRun">00시간 00분 00초</td>
-      <td width="4%" align="center"> 현재 : </td>
-      <td width="22%" id = "clockNow">2018:02:07: 10:10:00</td>
-      <td width="4%"align="center"> 시작 : </td>
-      <td width="20%" id = "clockStart">2018:02:07: 10:10:00</td>
-      <td width="4%"align="center"> 정지 : </td>
-      <td width="22%" id = "clockEnd">2019:00:00: 00:00:00</td>
-	</tr>
-</table>
-</div>
-
-<div align = "center" class='tail' style="margin:20px">
-	<span class="title1 titleName"> Temperature/Humidity  Monitoring System by Dong-Ho Power Electronic ( T.E.L.82-51-262-7532 ) </span>
-</div> <!-- tail-->
-
 </div> <!-- container -->
-<!-- control handlers -->
-
-<script>
-
-var ch1_list = document.getElementsByName('ch1_list1_list2')[0];
-var ch2_list = document.getElementsByName('ch2_list1_list2')[0];
-var ch3_list = document.getElementsByName('ch3_list1_list2')[0];
-var ch4_list = document.getElementsByName('ch4_list1_list2')[0];
-
-var ChList = new Array();
-ChList[0] ='';
-ChList[1] = ['U|4','V|5','W|6','d|0','q|1','D|2','Q|3'];
-ChList[2] = ['U|11','V|12','W|13','d|7','q|8','D|9','Q|10'];
-ChList[3] = ['Iu|14','Iv|15','se|18','cmd|19','Vdc|16','T|17'];
-ChList[4] = ['U|20','V|21','W|22'];
-ChList[5] = ['Theta|30','ThetaM|31','sinTheta|32','cosTheta|33','we|34','wr|35','wr_m|36'];
-
-function updateCh1Select(selectedGroup){
-    if (selectedGroup>0){
-        for (var i=0; i < ChList[selectedGroup].length; i++)
-            ch1_list.options[i] = new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh2Select(selectedGroup){
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch2_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh3Select(selectedGroup){
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch3_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-function updateCh4Select(selectedGroup){
-    ch4_list.options.length=0;
-    if (selectedGroup>0){
-        for (i=0; i < ChList[selectedGroup].length; i++)
-            ch4_list.options[i]=new Option(ChList[selectedGroup][i].split("|")[0], ChList[selectedGroup][i].split("|")[1]);
-    }
-}
-
-var chSelected = new Array();
-chSelected[0] = 0;
-chSelected[1] = 1;
-chSelected[2] = 2;
-chSelected[3] = 3;
-chSelected[4] = 4;
-chSelected[5] = 5;
-
-function selectScopeCh(ch, selected){
-   chSelected[ch] = selected;
-}
-
-function setScopeCh(ch){
-
-   var chanel = ch+1;
-   var selector = document.getElementById("idScaleCh"+chanel);
-   var scale = selector[selector.selectedIndex].value;
-
-   var setId = "idOffsetCh"+chanel;
-   console.log("setId = ",setId); 
-   var offset = document.getElementById(setId).value;
-
-   console.log(chSelected[ch],scale,offset);
-   sendSetScopeChCmd(ch,chSelected[ch],scale,offset);
-}
-
-function xyPlotOn(arg1){
-   xyPlotState = arg1;
-   console.log('xyPloteState = ',arg1);   
-}
-
-
-</script>
 {% endblock %}

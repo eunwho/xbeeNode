@@ -1,17 +1,32 @@
 //"use strict"; 
 // $sudo dmesg | grep tty 
-const NO_SCOPE_DATA = 400;
-var inveStart = 0;
-var digiOut = 0xff;
-var graphOnOff = 0;
-var scopeOnOff = 0;
 
+const sens1 = 'G001';
+const sens2 = 'G110';
 
 var Promise = require('promise');
-//--- mongoose setting
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise;
+
+const Schema = mongoose.Schema;
+
+const wsnSchema = new Schema({
+	start_date:{type:Date,default:Date.now},
+	tempData: [],
+	humiData: []
+});
+
+const xbeeStatusSchema = new Schema({
+	date:{type:Date,default:Date.now},
+	wsnData: String
+});
+
+const testSchema = new Schema({
+	date:{type:Date,default:Date.now},
+	TR:Number,
+	HR:Number
+});
 
 mongoose.connect('mongodb://localhost/wsns0');
 
@@ -21,12 +36,9 @@ db.once('open',function(){
 	console.log('Ok db connected');
 });
 
-var wsnSchema = mongoose.Schema({
-	wsnData: String,
-	date:{type:Date,default:Date.now}
-});
-
 var wsnDB1 = mongoose.model('wsnDB1',wsnSchema);
+var wsnDB2 = mongoose.model('wsnDB2',xbeeStatusSchema);
+var testDB = mongoose.model('testDB',testSchema);
 
 //--- start of digital inout routine
 
@@ -37,22 +49,17 @@ function shutdown(callback){
     exec('shutdown now', function(error, stdout, stderr){ callback(stdout); });
 }
 
-/*
-var port = new SerialPort('/dev/ttyAMA0',{
-    baudRate: 115200,
-    parser: SerialPort.parsers.readline('\n')
-});
-*/
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
 //const port = new SerialPort('/dev/ttyS0',{
-const port = new SerialPort('/dev/ttyUSB0',{
+const port = new SerialPort('/dev/ttyUSB1',{
 //const port = new SerialPort('/dev/ttyAMA1',{
 //const port = new SerialPort('COM4',{
-   //baudRate: 500000
   // baudRate: 115200
    baudRate: 38400
 });
+
+var tempHumi = [];
 
 const parser = new Readline();
 port.pipe(parser);
@@ -115,6 +122,11 @@ app.use(function(req, res, next) {
   next(err);
 });
 
+/*
+app.get('/wsnObj',function ( request, response, next) {
+	response.send({x:12,y:34});
+}); 
+*/
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
@@ -133,160 +145,70 @@ app.use(function(err, req, res, next) {
   });
 });
 
-
-var count = 0; 
-var channel = 0;
-var dataLength = 600;
-var traceOnOff =0;			// 1 --> send tarace data to client
-var monitorOnOff =0;			// 1 --> send tarace data to client
-var codeEditOnOff =0;			// 1 --> send tarace data to client
-var getCodeList = 0;
-
 //--- start server
 console.log('http on : ' + portAddr.toString());
 server.listen(portAddr);
 
 //--- socket.io support
-
 io.on('connection', function (socket) {
 	var host  = socket.client.request.headers.host;
 	console.log('connected to : ' + host);
+
+	var promise = testFind("TR");
+	// var promise = tesAggregate("G001");
+	promise
+	.then(function( result){
+		console.log('=============================================');
+		console.log('          testFind Success        ');
+		console.log('=============================================');		
+		// console.log(result);
+		socket.emit('graphInit',result);
+	})
+	.catch(function(reject){
+		console.log('=============================================');
+		console.log('          testFind Fail !!!!        ');
+		console.log('=============================================');		
+		console.log(reject);
+	});				
+
+	
 	socket.on('disconnect', function () {
-  	console.log('disconnected from : ' + host);
-  });
-
-	socket.on('graph',function(msg){
-		console.log('scoket on graph =',msg);
-		graphOnOff = msg;
-	});
-
-	socket.on('scope',function(msg){
-		console.log('scoket on scope =',msg);
-		console.log(msg);
-		scopeOnOff = msg;
-	});
-
-	socket.on('codeEdit',function(msg){
-		//console.log('scoket on codeEdit =',msg);
-		//port.write(msg);
-		var masterName = "G110";
-		var promise = dbFindTRTH(masterName,1);
-
-		promise
-		.then(function(docs){
-      	console.log('----------------------------------');
-      	console.log('     promise then');
-      	console.log('----------------------------------');
-      
-			var promise = getTable(docs);	
-			
-			promise
-			.then(function (result) {		
-				console.log(result);
-				socket.emit('graph',result)
-			})
-			.catch (function(reject){
-				console.log( "getTable Err");
-			});	
-   	})
-   	.catch(function(err){
-      	console.log('promise catch');
-      	console.log(err);
-   	});
-
-	});
-
-	socket.on('getCodeList',function(msg){
-		console.log('scoket on codeList =',msg);
-		port.write('9:4:901:0.000e+0');
-	});
-
-/* use io */
-	socket.on('btnClick',function(msgTx){
-		console.log(msgTx.selVac);
-		var digitalOut = 1;
-		if( msgTx.selVac == 0){
-			inveStart = 1;
-			//digiOut = digiOut & 0xfe;
-			//writeMcp23017(ADDR1,0,digiOut);
-		}else if( msgTx.selVac == 1){
-			inveStart = 0;
-			digiOut = digiOut | 1;
-		} else if( msgTx.selVac == 2){
-			testOn = true;
-		} else if( msgTx.selVac == 3){
-			testOn = false;
-		} else if( msgTx.selVac == 4){
-			digiOut = digiOut | 4;			// clear ArmOff;
-			digiOut = digiOut & 0xfd;
-		} else if( msgTx.selVac == 5){
-			digiOut = digiOut | 2;			// clear ArmOff;
-			digiOut = digiOut & 0xfb;
-		} else if( msgTx.selVac == 6){
-			shutdown(function(output){
-    			console.log(output);
-			});
-		} else if( msgTx.selVac == 7){
-			gracefulShutdown();
-		}
-  });
+  		console.log('disconnected from : ' + host);
+  	});
 
 	//--- emitt graph proc 
-	myEmitter.on('mMessage',function(data){
-		socket.emit('message',data);
-	});    
-
-	myEmitter.on('mCodeList',function(data){
-		socket.emit('codeList',data);
-	});    
-
-	myEmitter.on('mGraph',function(data){
-		//socket.emit('graph',data);
-		socket.emit('graph',retVal);
-	});    
-
-	myEmitter.on('mScope',function(data){
-		socket.emit('scope',data);
-	});    
-
 	myEmitter.on('xbee',function(data){
 		socket.emit('xbee',data);
 	});    
-
 });
 
-var graphData = { rpm:0,Irms:0,Power:0,Ref:0,Vdc:0,Graph1:0,Graph2:0,Graph3:0,Graph4:0,Graph6:0};
-var scopeData = {Ch:0,data:[]};
-var graphProcCount = 0;
-
 parser.on('data',function (data){
-	var temp1 = 0;
-	var temp2 = 0;
+
+	console.log("data =" + data);
 	var y =0;
-	
 	var buff = new Buffer(data);
 	var tmp1 = data.split(",");
 
-	console.log("tmp[0].length =" + tmp1[0].length);
-
 	var startNo = tmp1[0].length;
 	var endNo = data.length;
- 
-	console.log(data.slice(startNo+1,endNo));
-
-	console.log(data);
-
 	var dataIn = data.slice(startNo+1,endNo);
-	console.log(dataIn);
+	var var1 = tmp1[2].split(":");
+	var var2 = tmp1[3].split(":");
+	// console.log("dataIn =" + dataIn);
 
-	var wsnIn = new wsnDB1({wsnData:dataIn});
-	wsnIn.save( function( err, wsnIn ){
-		if(err) return console.error(err);	
-	    console.log('SAVED: '+dataIn);
-	});			
-
-	myEmitter.emit('xbee',data);
-
+   if( (tmp1[1] == "G001") && ( var1[0] == "TR" ) && (var2[0] == "HR")){
+	
+		// console.log("temperature =" + var1[1]);
+		// console.log("Humidity =" + var2[1]);
+	
+		var recordHour = new testDB({TR:var1[1],HR:var2[1]});
+		
+		recordHour.save( function( err, recordHour ){
+			if(err) return console.error(err);	
+	    	console.log('SAVED: '+recordHour);
+		});					
+		myEmitter.emit('xbee',recordHour);
+	}	
 });
 
 function sleepFor( sleepDuration ){
@@ -295,15 +217,6 @@ function sleepFor( sleepDuration ){
 }
 
 //--- time interval 
-
-setInterval(function(){
-	if(graphOnOff) port.write('9:4:900:0.000e+0');
-},1000);
-
-
-setInterval(function() {
-	if(scopeOnOff)	  port.write('9:4:900:1.000e+2');
-},4000);
 
 setInterval(function(){
 	var stamp = new Date().toLocaleString();
@@ -344,40 +257,6 @@ process.on('exit', function () {
     console.log('\nShutting down, performing GPIO cleanup');
     process.exit(0);
 });
-
-var dbFindTRTH = function ( param ,term){
-
-	return new Promise(function(resolve, reject){		
-	
-	var masterName = param;
-	var tmp = term;
-
-	var graphDay = 2;
-
-	//console.log('sensorId_tmp : ' + tmp);
-
-	wsnDB1.find(
-		{$and:[{ 
-			"date" :{ 
-				$lte:new Date() }
-				// $gte: new Date( new Date().setDate( new Date().getDate()-graphDay))}
-			},{"wsnData":{$regex:masterName}},
-			{"wsnData":{$regex:"TR"}}
-		]},
-		{'wsnData':true,_id:false,'date':true},
-		function ( err, docs){
-			if( err ) {
-				reject(err);
-			}else{
-				resolve(docs);
-			}
-		}
-	).limit(10);	
-//	);	
-	}); // return promise 	
-}
-
- 
 
 var dhtData = [ {"key": "Temperature","values":[]},
    					{"key": "Humidity"   ,"values":[]}
@@ -439,7 +318,7 @@ function getTempHumi(arg1){
    var tmp3 = tmpIn[2].split(":");
 
   	if( (tmp1 == "G110") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
-      getData1.x = dateTmp;
+      getData1.x = dateTmp ;
       getData1.y = tmp2[1] * 1.0;
 
       getData2.x = dateTmp;
@@ -458,6 +337,39 @@ setTimeout(function() {
 
 }, 10*1000);
 
-
+/*
+		docs.forEach(function (collection){
+			var tmp1 = collection.wsnData.split(",");
+			var dateCount = ( collection.date*1 - now ) / oneDayCount;
+			
+			test.push([dateCount]);
+			test[i].push( tmp1[4]*1);
+			for ( var j = 5 ; j < 10 ; j++){ test[i].push( tmp1[j]*1);}
+				i ++;
+		});
+*/		
+var testFind = function ( param ){
+	var graphDay = 3 * 60 * 60 * 1000;
+   return new Promise(function(resolve, reject){
+   testDB.find(
+      {$and:[{"date" :{
+         $lte:new Date(),
+         $gte:new Date(new Date().setDate(new Date().getDate() - graphDay))}},
+         // {"wsnData":{$regex:param}},
+         {"TR":{$gte:0.0}}
+      ]},
+      {_id: false, __v: false},
+      function (err, docs){
+         if( err ) {
+            reject(err);
+         }else{
+ 	       resolve(docs);
+         }
+      }).sort({'date':-1});
+      // }).limit(10).sort({'date':-1});
+      // }).limit(100);
+      // });
+   });
+}
 //--- end of scope
 
