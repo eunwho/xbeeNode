@@ -3,12 +3,12 @@ var socket = io.connect();
 var messages = 0;
 
 var tmp = new Date();
-var dhtData1 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp+1000, "y":10}]},
-	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp+1000, "y":20}]}
+var dhtData1 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp, "y":20}]}
 ];
 
-var dhtData2 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp+1000, "y":10}]},
-	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp+1000, "y":20}]}
+var dhtData2 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp, "y":20}]}
 ];
 
 //
@@ -22,31 +22,29 @@ chart1.xAxis.tickFormat(function(d) {
 });
 
 chart1.x2Axis.tickFormat(function(d) { 
-		return d3.time.format('%m/%Y')(new Date(d));
+		return d3.time.format('%X')(new Date(d));
 });
 
+chart1.useInteractiveGuideline(true);
 chart1.yAxis.tickFormat(d3.format(',.1f'));
 chart1.y2Axis.tickFormat(d3.format(',.1f'));
 chart1.yDomain([-5,100]);
 chart1.color(['red','green','yellow']);
 
-
-//
 //-- Chart2  Select Day, Week, Month, Year chart
-// 
 var chart2 = nv.models.lineWithFocusChart();
-
 chart2.xAxis.tickFormat(function(d) { 
 		return d3.time.format('%X')(new Date(d));
 });
 
 chart2.x2Axis.tickFormat(function(d) { 
-		return d3.time.format('%m/%Y')(new Date(d));
+		return d3.time.format('%d/%m/%y')(new Date(d));
 });
 
+chart2.useInteractiveGuideline(true);
 chart2.yAxis.tickFormat(d3.format(',.1f'));
 chart2.y2Axis.tickFormat(d3.format(',.1f'));
-chart2.yDomain([0,100]);
+chart2.yDomain([-5,100]);
 chart2.color(['red','green','yellow']);
 
 var gaugeTemperature = {id:'gauge1',unit:'[\260C]',title:'Temperature',min:-10,max:50,
@@ -92,6 +90,10 @@ $("document").ready(function() {
 */
 });
 
+function btnTest1(arg){
+	socket.emit('btnPress',arg);
+}	
+
 async function getTempHumi(arg1){
 
 	return new Promise(function(resolve,reject){
@@ -135,10 +137,7 @@ async function getTable(docs){
 			.then(function(results){
 				dht[0].push(results[0]);
 				dht[1].push(results[1]);
-				if(closInde == (maxIndex -1) ) {
-					resolve(dht);
-				}	
-
+				if(closInde == (maxIndex -1) ) resolve(dht);
 			})
 			.catch(function(err){
 				console.log('get DbTable error');
@@ -150,71 +149,6 @@ async function getTable(docs){
 	});
 }	
 
-/*
-var test1 = [
-{x: "2020-09-24T00:08:11.846Z", y: 21.6},
-{x: "2020-09-24T00:07:30.707Z", y: 22.6},
-{x: "2020-09-24T00:07:10.135Z", y: 21.6},
-{x: "2020-09-24T00:06:49.569Z", y: 22.6},
-{x: "2020-09-24T00:06:28.995Z", y: 22.6},
-{x: "2020-09-24T00:06:08.424Z", y: 24.6},
-{x: "2020-09-24T00:05:47.850Z", y: 24.6},
-{x: "2020-09-24T00:05:27.276Z", y: 24.6},
-{x: "2020-09-24T00:05:06.710Z", y: 24.6},
-{x: "2020-09-24T00:04:25.561Z", y: 24.6}
-];
-
-var test2 = [
-{x: "2020-09-24T00:08:11.846Z", y: 51.6},
-{x: "2020-09-24T00:07:30.707Z", y: 52.6},
-{x: "2020-09-24T00:07:10.135Z", y: 51.6},
-{x: "2020-09-24T00:06:49.569Z", y: 42.6},
-{x: "2020-09-24T00:06:28.995Z", y: 52.6},
-{x: "2020-09-24T00:06:08.424Z", y: 54.6},
-{x: "2020-09-24T00:05:47.850Z", y: 54.6},
-{x: "2020-09-24T00:05:27.276Z", y: 54.6},
-{x: "2020-09-24T00:05:06.710Z", y: 54.6},
-{x: "2020-09-24T00:04:25.561Z", y: 54.6}
-];
-*/
-
-var test1 = [
-{x: 1000, y: 21.6},
-{x: 2000, y: 21.6},
-{x: 3000, y: 21.6},
-{x: 4000, y: 21.6},
-{x: 5000, y: 21.6},
-{x: 6000, y: 21.6},
-{x: 7000, y: 21.6},
-{x: 8000, y: 21.6},
-{x: 9000, y: 21.6},
-{x: 10000, y: 21.6},
-];
-
-var test2 = [
-{x: 1000, y: 51.6},
-{x: 2000, y: 51.7},
-{x: 3000, y: 51.8},
-{x: 4000, y: 51.9},
-{x: 5000, y: 51.0},
-{x: 6000, y: 51.1},
-{x: 7000, y: 51.2},
-{x: 8000, y: 51.6},
-{x: 9000, y: 51.6},
-{x: 10000, y: 51.6},
-];
-
-/*
-		docs.forEach(function (collection){
-			var tmp1 = collection.wsnData.split(",");
-			var dateCount = ( collection.date*1 - now ) / oneDayCount;
-			
-			test.push([dateCount]);
-			test[i].push( tmp1[4]*1);
-			for ( var j = 5 ; j < 10 ; j++){ test[i].push( tmp1[j]*1);}
-				i ++;
-		});
-*/		
 
 socket.on('graphInit', function (data) {
 
@@ -239,20 +173,51 @@ socket.on('graphInit', function (data) {
 	});
 });
 
-socket.on('xbee', function (data) {
+socket.on('allGraphInit', function (data) {
 
-	console.log(data);
-
-	var tmp2 = data.TR;
-	var tmp3 = data.HR;
-
-	console.log("Temperature = " + data.TR);
-
+	var promise = getTable(data);
+	promise
+	.then(function(res){
+		console.log("--- dhtData - 2 - value")
+		
+		dhtData2[0].values = res[0];
+		dhtData2[1].values = res[1];
+		
+		console.log(dhtData2[0].values);
+					
+		d3.select('#chart2 svg').datum(dhtData2).transition().duration(30).call(chart2);
+		chart2.update;
+	})
+	.catch(function(rej){
+		console.log(rej);
+	});
 });
 
-var scopeCount = 0;
+socket.on('xbee', function (data) {
 
-setInterval(function(){
+	console.log('--- socket on xbee ---');
+	console.log(data);
+	
+	var getData1 = {"x":0,"y":0};
+	var getData2 = {"x":0,"y":0};
+	var tmpDate = new Date();
 
-},2000);
+	getData1.x = new Date(data.date);
+	getData1.y = data.TR;
+
+	getData2.x = new Date(data.date);
+	getData2.y = data.HR;
+			
+	var dataLen = (dhtData1[0].values).length;
+	if( dataLen > 500 ){
+		dhtData1[0].values.splice(0,1);
+		dhtData1[1].values.splice(0,1);
+	}
+	dhtData1[0].values.push(getData1);
+	dhtData1[1].values.push(getData2);
+
+//			console.log(dhtData);
+	d3.select('#chart1 svg').datum(dhtData1).transition().duration(10).call(chart1);
+	chart1.update;
+});
 //--- end of ctrl.js

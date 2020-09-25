@@ -11,10 +11,10 @@ mongoose.Promise = global.Promise;
 
 const Schema = mongoose.Schema;
 
-const wsnSchema = new Schema({
-	start_date:{type:Date,default:Date.now},
-	tempData: [],
-	humiData: []
+const xbeeHourSchema = new Schema({
+	date:{type:Date,default:Date.now},
+	TR:Number,
+	HR:Number
 });
 
 const xbeeStatusSchema = new Schema({
@@ -36,8 +36,8 @@ db.once('open',function(){
 	console.log('Ok db connected');
 });
 
-var wsnDB1 = mongoose.model('wsnDB1',wsnSchema);
-var wsnDB2 = mongoose.model('wsnDB2',xbeeStatusSchema);
+var xbeeHourDB = mongoose.model('xbeeHourDB',xbeeHourSchema);
+var xbeeStateDB = mongoose.model('xbeeStateDB',xbeeStatusSchema);
 var testDB = mongoose.model('testDB',testSchema);
 
 //--- start of digital inout routine
@@ -52,7 +52,7 @@ function shutdown(callback){
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
 //const port = new SerialPort('/dev/ttyS0',{
-const port = new SerialPort('/dev/ttyUSB1',{
+const port = new SerialPort('/dev/ttyUSB0',{
 //const port = new SerialPort('/dev/ttyAMA1',{
 //const port = new SerialPort('COM4',{
   // baudRate: 115200
@@ -149,67 +149,7 @@ app.use(function(err, req, res, next) {
 console.log('http on : ' + portAddr.toString());
 server.listen(portAddr);
 
-//--- socket.io support
-io.on('connection', function (socket) {
-	var host  = socket.client.request.headers.host;
-	console.log('connected to : ' + host);
 
-	var promise = testFind("TR");
-	// var promise = tesAggregate("G001");
-	promise
-	.then(function( result){
-		console.log('=============================================');
-		console.log('          testFind Success        ');
-		console.log('=============================================');		
-		// console.log(result);
-		socket.emit('graphInit',result);
-	})
-	.catch(function(reject){
-		console.log('=============================================');
-		console.log('          testFind Fail !!!!        ');
-		console.log('=============================================');		
-		console.log(reject);
-	});				
-
-	
-	socket.on('disconnect', function () {
-  		console.log('disconnected from : ' + host);
-  	});
-
-	//--- emitt graph proc 
-	myEmitter.on('xbee',function(data){
-		socket.emit('xbee',data);
-	});    
-});
-
-parser.on('data',function (data){
-
-	console.log("data =" + data);
-	var y =0;
-	var buff = new Buffer(data);
-	var tmp1 = data.split(",");
-
-	var startNo = tmp1[0].length;
-	var endNo = data.length;
-	var dataIn = data.slice(startNo+1,endNo);
-	var var1 = tmp1[2].split(":");
-	var var2 = tmp1[3].split(":");
-	// console.log("dataIn =" + dataIn);
-
-   if( (tmp1[1] == "G001") && ( var1[0] == "TR" ) && (var2[0] == "HR")){
-	
-		// console.log("temperature =" + var1[1]);
-		// console.log("Humidity =" + var2[1]);
-	
-		var recordHour = new testDB({TR:var1[1],HR:var2[1]});
-		
-		recordHour.save( function( err, recordHour ){
-			if(err) return console.error(err);	
-	    	console.log('SAVED: '+recordHour);
-		});					
-		myEmitter.emit('xbee',recordHour);
-	}	
-});
 
 function sleepFor( sleepDuration ){
     var now = new Date().getTime();
@@ -262,33 +202,93 @@ var dhtData = [ {"key": "Temperature","values":[]},
    					{"key": "Humidity"   ,"values":[]}
 						];
 
-function getTable(docs){
+setTimeout(function() {
+
+}, 10*1000);
+
+var testFind = function ( param ){
+	var offset = param * 60 * 60 * 1000;
+   return new Promise(function(resolve, reject){
+   testDB.find(
+      {$and:[{"date" :{
+				$lte:new Date(), $gte: new Date( new Date() - offset)}
+  			},{"TR":{$gte:0.0}}
+      ]},
+      {_id: false, __v: false},
+      function (err, docs){
+         if( err ) reject(err);
+         else      resolve(docs);
+      });
+   });
+}
+
+var hourFind = function ( param ){
+	try {
+	// var offset = param * 60 * 60 * 1000;
+   return new Promise(function(resolve, reject){
+   xbeeHourDB.find(
+      {$and:[{"date" :{
+				// $lte:new Date(), $gte: new Date( new Date() - offset)}
+				$lte:new Date()}
+  			},{"TR":{$gte:0.0}}
+      ]},
+      {_id: false, __v: false},
+      function (err, docs){
+         if( err ) reject(err);
+         else      resolve(docs);
+      });
+   });
+	}catch (err) {
+ 		console.log(err);
+ 	}   
+}
+
+var sumHrTr = [0 , 0];
+
+async function getTrHr(arg1){
+
+	return new Promise(function(resolve,reject){
+		// console.log("--- getTrHr input arg1 = " + arg1);	
+		try {
+   		sumHrTr[0] = sumHrTr[0]*1.0 + (arg1.TR) * 1.0 ;
+   		sumHrTr[1] = sumHrTr[1]*1.0 + (arg1.HR) * 1.0 ;
+			resolve(sumHrTr);
+		} catch (err) { 
+			reject(err);
+		}	
+	});
+}	
+
+async function getOneHourMean(docs){
 
 	return new Promise(function(resolve,reject){
 
 	var sequence = Promise.resolve();
 
-	var retu =[[],[]];
-	var results= 0;
 	var maxIndex = docs.length;
+	var dht = [[0],[0]];
 
+	sumHrTr[0] = 0;	// global variable
+	sumHrTr[1] = 0;   // 
+	
 	for ( var i = 0 ; i < maxIndex ; i++ ){
 		(function(){
 			var closInde = i;
 			var records = docs[closInde];
 			sequence = sequence.then(function(){
-				return getTempHumi(records);
+				return getTrHr(records);
 			})
 			.then(function(results){
-				retu[0].push(results[0]);
-				retu[1].push(results[1]);				
-				if(closInde == (maxIndex -1) ) {
-					console.log(retu);
-					resolve(retu);
-				}	
+				// console.log(results);
+				if(closInde == (maxIndex -1) ){
+					dht[0] = results[0] / maxIndex;
+					dht[1] = results[1] / maxIndex;
+					console.log('--- mean value = '+ dht);
+					resolve(dht);
+				}
 			})
 			.catch(function(err){
-				console.log('get DbTable error');
+				console.log('#272 Oops Err getOneHourMean');
 				console.log(err);
 				reject(err);				
 			}) 
@@ -297,79 +297,142 @@ function getTable(docs){
 	});
 }	
 
-function getTempHumi(arg1){
-
-	return new Promise(function(resolve,reject){
-
-	// var dateTmp = Date(arg1.date);
-	var dateTmp = arg1.date;
-
-	var retu =[[],[]];
-	var tmp = new Date();
-	var tmpDate = new Date();
-	var getData1 = {"x":tmpDate,"y":0};
-	var getData2 = {"x":tmpDate,"y":0};
-	
-	var masterMsg = arg1.wsnData;
-	var tmpIn = masterMsg.split(",");
-
-   var tmp1 = tmpIn[0];
-   var tmp2 = tmpIn[1].split(":");
-   var tmp3 = tmpIn[2].split(":");
-
-  	if( (tmp1 == "G110") && ( tmp2[0] == "TR" ) && (tmp3[0] == "HR")){
-      getData1.x = dateTmp ;
-      getData1.y = tmp2[1] * 1.0;
-
-      getData2.x = dateTmp;
-      getData2.y = tmp3[1] * 1.0;
-
-		//console.log(getData2.x);
-      retu[0].push(getData1);
-      retu[1].push(getData2);
-		resolve(retu);
-	}
-	else reject(0);
-	});
-}	
-
-setTimeout(function() {
-
-}, 10*1000);
-
-/*
-		docs.forEach(function (collection){
-			var tmp1 = collection.wsnData.split(",");
-			var dateCount = ( collection.date*1 - now ) / oneDayCount;
-			
-			test.push([dateCount]);
-			test[i].push( tmp1[4]*1);
-			for ( var j = 5 ; j < 10 ; j++){ test[i].push( tmp1[j]*1);}
-				i ++;
-		});
-*/		
-var testFind = function ( param ){
-	var graphDay = 3 * 60 * 60 * 1000;
+var hoursProc = function ( param ){
+	try {
    return new Promise(function(resolve, reject){
-   testDB.find(
-      {$and:[{"date" :{
-         $lte:new Date(),
-         $gte:new Date(new Date().setDate(new Date().getDate() - graphDay))}},
-         // {"wsnData":{$regex:param}},
-         {"TR":{$gte:0.0}}
-      ]},
-      {_id: false, __v: false},
-      function (err, docs){
-         if( err ) {
-            reject(err);
-         }else{
- 	       resolve(docs);
-         }
-      }).sort({'date':-1});
-      // }).limit(10).sort({'date':-1});
-      // }).limit(100);
-      // });
-   });
+	var promise = testFind(param);
+	promise
+	.then(function(docs){
+		// console.log(docs);			
+		var promise = getOneHourMean(docs);
+		promise
+		.then(function(res){
+			var xbeeHour = new xbeeHourDB({TR:res[0],HR:res[1]});
+			xbeeHour.save( function( err, xbeeHour ){
+				if(err) reject (err);				
+  				console.log('\r\n--- xbeeHourDB SAVED: ' + xbeeHour);
+  				resolve(res);
+			});
+
+		})	
+		.catch(function(err){
+			console.log(err);
+			reject(err);
+		});
+	})
+	.catch(function(rej){
+		reject(err);		
+	 });
+	 });
+	}catch (err) {
+		console.log(err);
+	}
 }
+
+//--- socket.io support
+io.on('connection', function (socket) {
+	var host  = socket.client.request.headers.host;
+	console.log('connected to : ' + host);
+
+	var promise = testFind(3);
+	promise
+	.then(function( result){
+		console.log('--- \234 testFind Success \r\n');
+		socket.emit('graphInit',result);
+	}).catch(function(reject){
+		console.log('--- Oops testFind Fail !\r\n');
+		console.log(reject);
+	});				
+
+   socket.on('btnPress', function (btnKey) {
+		try {						
+			var promise = hoursProc(1);
+			promise
+			.then(function( result){
+				console.log('--- \234 #351 hourProc Success \r\n');
+			}).catch(function(reject){
+				console.log('--- #353 Oops housProc Fail !\r\n');
+				console.log(reject);
+			});
+		} catch(err){
+			console.log( '---#357 ---');
+			console.log(err);		
+		}
+
+		try{
+			var promise = hourFind();
+			promise
+			.then(function( result){
+				console.log('--- \234 hourFind Success \r\n');
+				socket.emit('allGraphInit',result);
+			}).catch(function(reject){
+				console.log('--- #363 Oops hourFind Fail !\r\n');
+				console.log(reject);
+			});
+		}catch(err){
+			console.log('--- #372 ')
+			console.log(err);
+		}		
+  	});
+
+	socket.on('disconnect', function () {
+  		console.log('disconnected from : ' + host);
+  	});
+
+	//--- emitt graph proc 
+	myEmitter.on('xbee',function(data){
+		socket.emit('xbee',data);
+	});    
+});
+var hourFlag = (new Date()).getHours();
+
+parser.on('data',function (data){
+
+//-- if changed hour 
+//  1. delete dataBase 3hours late;
+//  2. save 1 hour database 
+
+	var hourNow = (new Date()).getHours() 
+
+	if( hourNow != hourFlag ){
+		hourFlag = hourNow;		
+
+		var promise = hoursProc(1);
+		promise
+		.then(function(res){
+			console.log(res);
+		})
+		.catch(function(rej){
+			console.log(rej);		
+		});
+	}	
+		
+	console.log("data =" + data);
+	var y =0;
+	var buff = new Buffer(data);
+	var tmp1 = data.split(",");
+
+	var startNo = tmp1[0].length;
+	var endNo = data.length;
+	var dataIn = data.slice(startNo+1,endNo);
+	var var1 = tmp1[2].split(":");
+	var var2 = tmp1[3].split(":");
+	// console.log("dataIn =" + dataIn);
+
+   if( (tmp1[1] == "G001") && ( var1[0] == "TR" ) && (var2[0] == "HR")){
+	
+		// console.log("temperature =" + var1[1]);
+		// console.log("Humidity =" + var2[1]);
+	
+		var recordHour = new testDB({TR:var1[1],HR:var2[1]});
+		
+		recordHour.save( function( err, recordHour ){
+			if(err) return console.error(err);	
+	    	console.log('SAVED: '+recordHour);
+		});					
+		myEmitter.emit('xbee',recordHour);
+	}	
+});
+
 //--- end of scope
 
