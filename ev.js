@@ -1,7 +1,7 @@
 //"use strict"; 
 // $sudo dmesg | grep tty 
 
-const sens1 = 'G001';
+const SENS_NAME1 = 'G002';
 const sens2 = 'G110';
 
 var Promise = require('promise');
@@ -419,7 +419,7 @@ parser.on('data',function (data){
 	var var2 = tmp1[3].split(":");
 	// console.log("dataIn =" + dataIn);
 
-   if( (tmp1[1] == "G001") && ( var1[0] == "TR" ) && (var2[0] == "HR")){
+   if( (tmp1[1] == SENS_NAME1 ) && ( var1[0] == "TR" ) && (var2[0] == "HR")){
 	
 		// console.log("temperature =" + var1[1]);
 		// console.log("Humidity =" + var2[1]);
