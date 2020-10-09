@@ -1,58 +1,97 @@
 //--- start the client application
+const SENS_NAME1 = 'G001';
+const SENS_NAME2 = 'G002';
+
 var socket = io.connect();
 var messages = 0;
 
 var tmp = new Date();
-var dhtData1 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
-	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp, "y":20}]}
+var tempData = [ {"key": "Temperature1","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Temperature2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":20}]}
 ];
 
-var dhtData2 = [ {"key": "Temperature","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
-	{"key": "Humidity"   ,"values":[{"x":tmp,"y":10},{"x":tmp, "y":20}]}
+var humiData = [ {"key": "Humidity1","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Humidity2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":20}]}
 ];
 
-//
-//-- Chart1  3 Hour chart
-// 
+var hourTempData = [ {"key": "Temperature1","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Temperature2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":0}]}
+];
 
-var chart1 = nv.models.lineWithFocusChart();
+var hourHumiData = [ {"key": "Humidity1","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
+	{"key": "Humidity2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":0}]}
+];
 
-chart1.xAxis.tickFormat(function(d) { 
+var chartTemp = nv.models.lineWithFocusChart();
+chartTemp.xAxis.tickFormat(function(d) { 
 		return d3.time.format('%X')(new Date(d));
 });
-
-chart1.x2Axis.tickFormat(function(d) { 
+chartTemp.x2Axis.tickFormat(function(d) { 
 		return d3.time.format('%X')(new Date(d));
 });
+chartTemp.useInteractiveGuideline(true);
+chartTemp.yAxis.tickFormat(d3.format(',.1f'));
+chartTemp.y2Axis.tickFormat(d3.format(',.1f'));
+chartTemp.yDomain([-10,40]);
+chartTemp.color(['red','green','yellow']);
 
-chart1.useInteractiveGuideline(true);
-chart1.yAxis.tickFormat(d3.format(',.1f'));
-chart1.y2Axis.tickFormat(d3.format(',.1f'));
-chart1.yDomain([-5,100]);
-chart1.color(['red','green','yellow']);
+var chartHourTemp = nv.models.lineWithFocusChart();
+chartHourTemp.xAxis.tickFormat(function(d) { 
+		return d3.time.format('%X')(new Date(d));
+});
+chartHourTemp.x2Axis.tickFormat(function(d) { 
+		return d3.time.format('%X')(new Date(d));
+});
+chartHourTemp.useInteractiveGuideline(true);
+chartHourTemp.yAxis.tickFormat(d3.format(',.1f'));
+chartHourTemp.y2Axis.tickFormat(d3.format(',.1f'));
+chartHourTemp.yDomain([-10,40]);
+chartHourTemp.color(['red','green','yellow']);
 
 //-- Chart2  Select Day, Week, Month, Year chart
-var chart2 = nv.models.lineWithFocusChart();
-chart2.xAxis.tickFormat(function(d) { 
+var chartHumi = nv.models.lineWithFocusChart();
+chartHumi.xAxis.tickFormat(function(d) { 
 		return d3.time.format('%X')(new Date(d));
 });
-
-chart2.x2Axis.tickFormat(function(d) { 
+chartHumi.x2Axis.tickFormat(function(d) { 
 		return d3.time.format('%d/%m/%y')(new Date(d));
 });
+chartHumi.useInteractiveGuideline(true);
+chartHumi.yAxis.tickFormat(d3.format(',.1f'));
+chartHumi.y2Axis.tickFormat(d3.format(',.1f'));
+chartHumi.yDomain([0,100]);
+chartHumi.color(['red','green','yellow']);
 
-chart2.useInteractiveGuideline(true);
-chart2.yAxis.tickFormat(d3.format(',.1f'));
-chart2.y2Axis.tickFormat(d3.format(',.1f'));
-chart2.yDomain([-5,100]);
-chart2.color(['red','green','yellow']);
+var chartHourHumi = nv.models.lineWithFocusChart();
+chartHourHumi.xAxis.tickFormat(function(d) { 
+		return d3.time.format('%X')(new Date(d));
+});
+chartHourHumi.x2Axis.tickFormat(function(d) { 
+		return d3.time.format('%d/%m/%y')(new Date(d));
+});
+chartHourHumi.useInteractiveGuideline(true);
+chartHourHumi.yAxis.tickFormat(d3.format(',.1f'));
+chartHourHumi.y2Axis.tickFormat(d3.format(',.1f'));
+chartHourHumi.yDomain([0,100]);
+chartHourHumi.color(['red','green','yellow']);
 
-var gaugeTemperature = {id:'gauge1',unit:'[\260C]',title:'Temperature',min:-10,max:50,
+
+var gaugeTemp1 = {id:'gaugeTemp1',unit:'[\260C]',title:'Temperature',min:-10,max:50,
 mTick:[-10,0,10,20,30,40,50],
 alarm:'[ {"from": -10, "to":0, "color": "rgba(0,  0, 255, 1.0)"},{"from":10, "to":30, "color": "rgba(255,255,255, 0.5)"}, {"from": 30, "to": 50, "color": "rgba(255,0,0, 1.0)"}]'
 }
 
-var gaugeHumidity = {id:'gauge2',unit:'[%]',title:'Humidity',min:0,max:100,
+var gaugeTemp2 = {id:'gaugeTemp2',unit:'[\260C]',title:'Temperature',min:-10,max:50,
+mTick:[-10,0,10,20,30,40,50],
+alarm:'[ {"from": -10, "to":0, "color": "rgba(0,  0, 255, 1.0)"},{"from":10, "to":30, "color": "rgba(255,255,255, 0.5)"}, {"from": 30, "to": 50, "color": "rgba(255,0,0, 1.0)"}]'
+}
+
+var gaugeHumi1 = {id:'gaugeHumi1',unit:'[%]',title:'Humidity',min:0,max:100,
+mTick:[0,25,50,75,100,],
+alarm:'[ {"from": 0, "to":25, "color": "rgba(255,0,0,0.5)"}, {"from": 25,"to":75, "color": "rgba(255,255,255,1.0)"}, {"from":75,"to":100, "color": "rgba( 0, 0,255,0.5)"}]'
+}
+
+var gaugeHumi2 = {id:'gaugeHumi2',unit:'[%]',title:'Humidity',min:0,max:100,
 mTick:[0,25,50,75,100,],
 alarm:'[ {"from": 0, "to":25, "color": "rgba(255,0,0,0.5)"}, {"from": 25,"to":75, "color": "rgba(255,255,255,1.0)"}, {"from":75,"to":100, "color": "rgba( 0, 0,255,0.5)"}]'
 }
@@ -72,22 +111,20 @@ function gaugeInit(arg){
 $("document").ready(function() {
    var dummy = {0:0};
    
+/*
 	d3.select('#chart1 svg').datum(dhtData1).transition().duration(5).call(chart1);
 	chart1.update;
 
 	d3.select('#chart2 svg').datum(dhtData2).transition().duration(5).call(chart2);
 	chart2.update;
-
+*/
    // chart1.update;
    // chart2.update;
    
-   gaugeInit(gaugeTemperature);
-   gaugeInit(gaugeHumidity);
-/*   
-	$.getJSON('/wsnObj', { dummy: new Date().getTime() }, function(wsnObj){ 
-		console.log(wsnObj);	
-	});
-*/
+   gaugeInit(gaugeTemp1);
+   gaugeInit(gaugeTemp2);
+   gaugeInit(gaugeHumi1);
+   gaugeInit(gaugeHumi2);
 });
 
 function btnTest1(arg){
@@ -121,7 +158,6 @@ async function getTempHumi(arg1){
 async function getTable(docs){
 
 	return new Promise(function(resolve,reject){
-
 	var sequence = Promise.resolve();
 
 	var maxIndex = docs.length;
@@ -149,29 +185,90 @@ async function getTable(docs){
 	});
 }	
 
-
-socket.on('graphInit', function (data) {
+socket.on('hourInit1', function (data) {
 
 	var promise = getTable(data);
 	promise
 	.then(function(res){
-		console.log("---- dhtData1.value ---")
-		
-		dhtData1[0].values = res[0];
-		dhtData1[1].values = res[1];
-		// dhtData1[0].values = test1;
-		// dhtData1[1].values = test2;
-		
-		console.log(dhtData1[0].values);
+
+		hourTempData[0].values = res[0];
+		hourHumiData[0].values = res[1];
 					
-		d3.select('#chart1 svg').datum(dhtData1).transition().duration(30).call(chart1);
-		chart1.update;
+		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
+		chartHourTemp.update;
+		d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
+		chartHourHumi.update;
+	})
+	.catch(function(rej){
+		console.log("---- Error getTable ---")
+		console.log(rej);
+	});
+});
+
+socket.on('hourInit2', function (data) {
+
+	var promise = getTable(data);
+	promise
+	.then(function(res){
+
+		hourTempData[1].values = res[0];
+		hourHumiData[1].values = res[1];
+					
+		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
+		chartHourTemp.update;
+		d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
+		chartHourHumi.update;
+	})
+	.catch(function(rej){
+		console.log("---- Error getTable ---")
+		console.log(rej);
+	});
+});
+
+socket.on('graphInit1', function (data) {
+
+	console.log('--- Test debug ---');
+	var promise = getTable(data);
+	promise
+	.then(function(res){
+
+		tempData[0].values = res[0];
+		humiData[0].values = res[1];
+					
+		d3.select('#chartTemp svg').datum(tempData).transition().duration(30).call(chartTemp);
+		chartTemp.update;
+		d3.select('#chartHumi svg').datum(humiData).transition().duration(30).call(chartHumi);
+		chartHumi.update;
+		// chartTemp.update;
+		
+	})
+	.catch(function(rej){
+		console.log("---- Error getTable ---")
+		console.log(rej);
+	});
+});
+
+socket.on('graphInit2', function (data) {
+
+	var promise = getTable(data);
+	promise
+	.then(function(res){
+		
+		tempData[1].values = res[0];
+		humiData[1].values = res[1];
+					
+		d3.select('#chartTemp svg').datum(tempData).transition().duration(30).call(chartTemp);
+		chartTemp.update;
+
+		d3.select('#chartHumi svg').datum(humiData).transition().duration(30).call(chartHumi);
+		chartHumi.update;
 		
 	})
 	.catch(function(rej){
 		console.log(rej);
 	});
 });
+
 
 socket.on('allGraphInit', function (data) {
 
@@ -180,18 +277,19 @@ socket.on('allGraphInit', function (data) {
 	.then(function(res){
 		console.log("--- dhtData - 2 - value")
 		
-		dhtData2[0].values = res[0];
-		dhtData2[1].values = res[1];
+		hourTempData[0].values = res[0];
+		hourHumiData[1].values = res[1];
 		
-		console.log(dhtData2[0].values);
+		// console.log(dhtData2[0].values);
 					
-		d3.select('#chart2 svg').datum(dhtData2).transition().duration(30).call(chart2);
-		chart2.update;
+		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
+		// chartHourTemp.update;
 	})
 	.catch(function(rej){
 		console.log(rej);
 	});
 });
+
 
 socket.on('xbee', function (data) {
 
@@ -207,17 +305,32 @@ socket.on('xbee', function (data) {
 
 	getData2.x = new Date(data.date);
 	getData2.y = data.HR;
+	var index  = 0;
 			
-	var dataLen = (dhtData1[0].values).length;
-	if( dataLen > 500 ){
-		dhtData1[0].values.splice(0,1);
-		dhtData1[1].values.splice(0,1);
-	}
-	dhtData1[0].values.push(getData1);
-	dhtData1[1].values.push(getData2);
+	if(data.sensName == SENS_NAME2 ) index = 1; 
+
+	var dataLen = (tempData[index].values).length;
+	if( dataLen > 500 )	tempData[index].values.splice(0,1);
+
+	dataLen = (tempData[index].values).length;
+	if( dataLen > 500 )	humiData[index].values.splice(0,1);
+
+	tempData[index].values.push(getData1);
+	humiData[index].values.push(getData2);
 
 //			console.log(dhtData);
-	d3.select('#chart1 svg').datum(dhtData1).transition().duration(10).call(chart1);
-	chart1.update;
+	d3.select('#chartTemp svg').datum(tempData).transition().duration(10).call(chartTemp);
+	chartTemp.update;
+
+	d3.select('#chartHumi svg').datum(humiData).transition().duration(10).call(chartHumi);
+	chartHumi.update;
+
+	if(data.sensName == SENS_NAME1 ) { 
+		$('#gaugeTemp1').attr('data-value', data.TR);
+   		$('#gaugeHumi1').attr('data-value', data.HR);
+	} else {
+   		$('#gaugeTemp2').attr('data-value', data.TR);
+   		$('#gaugeHumi2').attr('data-value', data.HR);
+	}
 });
 //--- end of ctrl.js

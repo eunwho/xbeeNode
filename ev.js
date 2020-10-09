@@ -1,7 +1,8 @@
 //"use strict"; 
 // $sudo dmesg | grep tty 
 
-const SENS_NAME1 = 'G002';
+const SENS_NAME1 = 'G001';
+const SENS_NAME2 = 'G002';
 const sens2 = 'G110';
 
 var Promise = require('promise');
@@ -13,6 +14,7 @@ const Schema = mongoose.Schema;
 
 const xbeeHourSchema = new Schema({
 	date:{type:Date,default:Date.now},
+	sensName: String,
 	TR:Number,
 	HR:Number
 });
@@ -24,6 +26,7 @@ const xbeeStatusSchema = new Schema({
 
 const testSchema = new Schema({
 	date:{type:Date,default:Date.now},
+	sensName: String,
 	TR:Number,
 	HR:Number
 });
@@ -206,31 +209,31 @@ setTimeout(function() {
 
 }, 10*1000);
 
-var testFind = function ( param ){
-	var offset = param * 60 * 60 * 1000;
+var testFind = function ( hours, sensName ){
+	var offset = hours * 60 * 60 * 1000;
    return new Promise(function(resolve, reject){
    testDB.find(
-      {$and:[{"date" :{
-				$lte:new Date(), $gte: new Date( new Date() - offset)}
-  			},{"TR":{$gte:0.0}}
+      {$and:[{"date" :{ $lte:new Date(), $gte: new Date( new Date() - offset)}},
+			{"TR":{$gte:0.0}},
+			{"sensName":sensName}
+			//{$match:{"sensName":sensName}}
       ]},
       {_id: false, __v: false},
-      function (err, docs){
+      function (err, docs){			
          if( err ) reject(err);
          else      resolve(docs);
       });
    });
 }
 
-var hourFind = function ( param ){
+var hourFind = function ( sensName ){
 	try {
 	// var offset = param * 60 * 60 * 1000;
    return new Promise(function(resolve, reject){
    xbeeHourDB.find(
-      {$and:[{"date" :{
-				// $lte:new Date(), $gte: new Date( new Date() - offset)}
-				$lte:new Date()}
-  			},{"TR":{$gte:0.0}}
+      {$and:[{"date" :{ $lte:new Date()}},
+			{"TR":{$gte:0.0}},
+			{"sensName":sensName}
       ]},
       {_id: false, __v: false},
       function (err, docs){
@@ -281,8 +284,10 @@ async function getOneHourMean(docs){
 			.then(function(results){
 				// console.log(results);
 				if(closInde == (maxIndex -1) ){
-					dht[0] = results[0] / maxIndex;
-					dht[1] = results[1] / maxIndex;
+					// dht[0] = Math.floor10( results[0] / maxIndex , -1 );
+					// dht[1] = Math.floor10( results[1] / maxIndex , -1 );
+					dht[0] = results[0] / maxIndex ;
+					dht[1] = results[1] / maxIndex ;
 					console.log('--- mean value = '+ dht);
 					resolve(dht);
 				}
@@ -297,17 +302,19 @@ async function getOneHourMean(docs){
 	});
 }	
 
-var hoursProc = function ( param ){
-	try {
+var hoursProc = function ( hours, sensIn ){
+	try{
    return new Promise(function(resolve, reject){
-	var promise = testFind(param);
+	var promise = testFind(hours, sensIn );
 	promise
 	.then(function(docs){
-		// console.log(docs);			
+		
+		console.log(docs);			
+		
 		var promise = getOneHourMean(docs);
 		promise
 		.then(function(res){
-			var xbeeHour = new xbeeHourDB({TR:res[0],HR:res[1]});
+			var xbeeHour = new xbeeHourDB({sensName:sensIn,TR:res[0],HR:res[1]});
 			xbeeHour.save( function( err, xbeeHour ){
 				if(err) reject (err);				
   				console.log('\r\n--- xbeeHourDB SAVED: ' + xbeeHour);
@@ -315,13 +322,14 @@ var hoursProc = function ( param ){
 			});
 
 		})	
-		.catch(function(err){
+		.catch(function(err){			
 			console.log(err);
 			reject(err);
 		});
 	})
 	.catch(function(rej){
-		reject(err);		
+		console.log("--- err testFind()---");
+		reject(rej);		
 	 });
 	 });
 	}catch (err) {
@@ -334,19 +342,54 @@ io.on('connection', function (socket) {
 	var host  = socket.client.request.headers.host;
 	console.log('connected to : ' + host);
 
-	var promise = testFind(3);
+// debug 2020.1008 soonkil jung
+
+	var promise = testFind(3,SENS_NAME1);
 	promise
 	.then(function( result){
-		console.log('--- \234 testFind Success \r\n');
-		socket.emit('graphInit',result);
+		console.log('--- \234 testFind1 Success \r\n');
+		// console.log(result);
+		socket.emit('graphInit1',result);
 	}).catch(function(reject){
-		console.log('--- Oops testFind Fail !\r\n');
+		console.log('--- Oops testFind G001 Fail !\r\n');
 		console.log(reject);
 	});				
 
+	var promise = testFind(3,SENS_NAME2);
+	promise
+	.then(function( result){
+		console.log('--- \234 testFind2 Success \r\n');
+		socket.emit('graphInit2',result);
+	}).catch(function(reject){
+		console.log('--- Oops testFind G002 Fail !\r\n');
+		console.log(reject);
+	});				
+
+	var promise = hourFind(SENS_NAME1);
+	promise
+	.then(function( result){
+		console.log('--- Success hourFind G001  !\r\n');		
+		console.log(result);		
+		socket.emit('hourInit1',result);
+	}).catch(function(reject){
+		console.log('--- Oops testFind G002 Fail !\r\n');
+		console.log(reject);
+	});				
+
+	var promise = hourFind(SENS_NAME2);
+	promise
+	.then(function( result){
+		console.log('--- Success hourFind G002  !\r\n');		
+		console.log(result);		
+		socket.emit('hourInit2',result);
+	}).catch(function(reject){
+		console.log(reject);
+	});				
+
+
    socket.on('btnPress', function (btnKey) {
 		try {						
-			var promise = hoursProc(1);
+			var promise = hoursProc(1,SENS_NAME1);
 			promise
 			.then(function( result){
 				console.log('--- \234 #351 hourProc Success \r\n');
@@ -354,21 +397,42 @@ io.on('connection', function (socket) {
 				console.log('--- #353 Oops housProc Fail !\r\n');
 				console.log(reject);
 			});
+
+			var promise = hoursProc(1,SENS_NAME2);
+			promise
+			.then(function( result){
+				console.log('--- \234 #351 hourProc Success \r\n');
+			}).catch(function(reject){
+				console.log('--- #353 Oops housProc Fail !\r\n');
+				console.log(reject);
+			});
+
 		} catch(err){
 			console.log( '---#357 ---');
 			console.log(err);		
 		}
 
 		try{
-			var promise = hourFind();
+			var promise = hourFind(SENS_NAME1);
 			promise
 			.then(function( result){
 				console.log('--- \234 hourFind Success \r\n');
-				socket.emit('allGraphInit',result);
+				socket.emit('hourInit1',result);
 			}).catch(function(reject){
 				console.log('--- #363 Oops hourFind Fail !\r\n');
 				console.log(reject);
 			});
+
+			var promise = hourFind(SENS_NAME2);
+			promise
+			.then(function( result){
+				console.log('--- \234 hourFind Success \r\n');
+				socket.emit('hourInit2',result);
+			}).catch(function(reject){
+				console.log('--- #363 Oops hourFind Fail !\r\n');
+				console.log(reject);
+			});
+
 		}catch(err){
 			console.log('--- #372 ')
 			console.log(err);
@@ -397,7 +461,16 @@ parser.on('data',function (data){
 	if( hourNow != hourFlag ){
 		hourFlag = hourNow;		
 
-		var promise = hoursProc(1);
+		var promise = hoursProc(1,SENS_NAME1);
+		promise
+		.then(function(res){
+			console.log(res);
+		})
+		.catch(function(rej){
+			console.log(rej);		
+		});
+
+		var promise = hoursProc(1,SENS_NAME2);
 		promise
 		.then(function(res){
 			console.log(res);
@@ -414,17 +487,30 @@ parser.on('data',function (data){
 
 	var startNo = tmp1[0].length;
 	var endNo = data.length;
+
+	// console.log('---endNo = '+endNo);
+
 	var dataIn = data.slice(startNo+1,endNo);
 	var var1 = tmp1[2].split(":");
 	var var2 = tmp1[3].split(":");
+
 	// console.log("dataIn =" + dataIn);
 
-   if( (tmp1[1] == SENS_NAME1 ) && ( var1[0] == "TR" ) && (var2[0] == "HR")){
+  	if( var1[0] == "MY" ){
+		var recordState = new xbeeStateDB({wsnData:dataIn});
+		
+		recordState.save( function( err, recordState ){
+			if(err) return console.error(err);	
+	    	console.log('SAVE xbeeState: '+ recordState);
+		});					
+		// myEmitter.emit('xbee',recordState);
+  	// }else  if( (tmp1[1] == SENS_NAME1 ) && ( var1[0] == "TR" ) && (var2[0] == "HR")){
+  	}else  if( ( var1[0] == "TR" ) && (var2[0] == "HR")){
 	
 		// console.log("temperature =" + var1[1]);
 		// console.log("Humidity =" + var2[1]);
 	
-		var recordHour = new testDB({TR:var1[1],HR:var2[1]});
+		var recordHour = new testDB({sensName:tmp1[1], TR:var1[1], HR:var2[1]});
 		
 		recordHour.save( function( err, recordHour ){
 			if(err) return console.error(err);	
