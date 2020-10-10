@@ -388,6 +388,10 @@ io.on('connection', function (socket) {
 
 
    socket.on('btnPress', function (btnKey) {
+		console.log('--- PRESS TEST!  !\r\n');		
+
+	
+/*
 		try {						
 			var promise = hoursProc(1,SENS_NAME1);
 			promise
@@ -411,12 +415,12 @@ io.on('connection', function (socket) {
 			console.log( '---#357 ---');
 			console.log(err);		
 		}
-
+*/
 		try{
 			var promise = hourFind(SENS_NAME1);
 			promise
 			.then(function( result){
-				console.log('--- \234 hourFind Success \r\n');
+				console.log('--- \234 hourFind Success GOO1 \r\n');
 				socket.emit('hourInit1',result);
 			}).catch(function(reject){
 				console.log('--- #363 Oops hourFind Fail !\r\n');
@@ -426,7 +430,7 @@ io.on('connection', function (socket) {
 			var promise = hourFind(SENS_NAME2);
 			promise
 			.then(function( result){
-				console.log('--- \234 hourFind Success \r\n');
+				console.log('--- \234 hourFind Success G002 \r\n');
 				socket.emit('hourInit2',result);
 			}).catch(function(reject){
 				console.log('--- #363 Oops hourFind Fail !\r\n');
@@ -437,7 +441,9 @@ io.on('connection', function (socket) {
 			console.log('--- #372 ')
 			console.log(err);
 		}		
+
   	});
+
 
 	socket.on('disconnect', function () {
   		console.log('disconnected from : ' + host);

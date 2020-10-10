@@ -37,10 +37,10 @@ chartTemp.color(['red','green','yellow']);
 
 var chartHourTemp = nv.models.lineWithFocusChart();
 chartHourTemp.xAxis.tickFormat(function(d) { 
-		return d3.time.format('%X')(new Date(d));
+	return d3.time.format('%y/%m/%d')(new Date(d));
 });
 chartHourTemp.x2Axis.tickFormat(function(d) { 
-		return d3.time.format('%X')(new Date(d));
+	return d3.time.format('%y/%m/%d')(new Date(d));
 });
 chartHourTemp.useInteractiveGuideline(true);
 chartHourTemp.yAxis.tickFormat(d3.format(',.1f'));
@@ -54,7 +54,7 @@ chartHumi.xAxis.tickFormat(function(d) {
 		return d3.time.format('%X')(new Date(d));
 });
 chartHumi.x2Axis.tickFormat(function(d) { 
-		return d3.time.format('%d/%m/%y')(new Date(d));
+		return d3.time.format('%X')(new Date(d));
 });
 chartHumi.useInteractiveGuideline(true);
 chartHumi.yAxis.tickFormat(d3.format(',.1f'));
@@ -64,10 +64,10 @@ chartHumi.color(['red','green','yellow']);
 
 var chartHourHumi = nv.models.lineWithFocusChart();
 chartHourHumi.xAxis.tickFormat(function(d) { 
-		return d3.time.format('%X')(new Date(d));
+	return d3.time.format('%y/%m/%d')(new Date(d));
 });
 chartHourHumi.x2Axis.tickFormat(function(d) { 
-		return d3.time.format('%d/%m/%y')(new Date(d));
+	return d3.time.format('%y/%m/%d')(new Date(d));
 });
 chartHourHumi.useInteractiveGuideline(true);
 chartHourHumi.yAxis.tickFormat(d3.format(',.1f'));
@@ -128,7 +128,24 @@ $("document").ready(function() {
 });
 
 function btnTest1(arg){
-	socket.emit('btnPress',arg);
+
+	var tmp = new Date();
+	// hourTempData[0].values = res[0];
+	// hourHumiData[0].values = res[1];
+
+	hourTempData[0].values = [{"x":tmp,"y":21},{"x":tmp, "y":20}];
+	hourTempData[1].values = [{"x":tmp,"y":21},{"x":tmp, "y":20}];
+	hourHumiData[0].values = [{"x":tmp,"y":50},{"x":tmp, "y":60}];
+	hourHumiData[1].values = [{"x":tmp,"y":50},{"x":tmp, "y":60}];
+					
+	d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
+	chartHourTemp.update;
+	d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
+	chartHourHumi.update;
+
+	setTimeout( ()=> {
+		socket.emit('btnPress',arg);
+	},2000);
 }	
 
 async function getTempHumi(arg1){
