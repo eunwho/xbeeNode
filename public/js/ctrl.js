@@ -126,10 +126,12 @@ function gaugeInit(arg){
    $(a).attr('data-major-ticks',arg.mTick);
    $(a).attr('data-stroke-ticks',true);
    $(a).attr('data-highlights',arg.alarm);
+
+
 }
 		
 $("document").ready(function() {
-   var dummy = {0:0};
+   // var dummy = {0:0};
    
 /*
 	d3.select('#chart1 svg').datum(dhtData1).transition().duration(5).call(chart1);
@@ -145,6 +147,26 @@ $("document").ready(function() {
    gaugeInit(gaugeTemp2);
    gaugeInit(gaugeHumi1);
    gaugeInit(gaugeHumi2);
+
+   //$("document").getJSON('/wsnObj', { dummy : new Date().getTime() }, function(wsnObj){
+   // $.getJSON('/wsnObj', { dummy : new Date().getTime() }, function(wsnObj){
+   $.getJSON('/wsnObj', function(wsnObj){
+
+	   var promise = fixBTDataA(wsnObj[0]);
+    
+    	promise.then( function(results) {
+	        batteryData[0].values = results;
+        	return fixBTDataA(wsnObj[1]);
+    	})
+    	.then( function(results) {
+	        batteryData[1].values = results;
+
+			d3.select('#chartBattery svg').datum(batteryData).transition().duration(30).call(chartBattery);
+        	chartBattery.update;
+    	})
+    	.catch(function(rej) { console.log(rej);   });         
+	});
+
 });
 
 

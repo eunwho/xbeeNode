@@ -124,11 +124,7 @@ app.use(function(req, res, next) {
   next(err);
 });
 
-/*
-app.get('/wsnObj',function ( request, response, next) {
-	response.send({x:12,y:34});
-}); 
-*/
+
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
@@ -292,8 +288,6 @@ var getBattData = function( ){
 
 			promise
 			.then(function(results){			
-//				console.log('--- #302 SetBattTable results \r\n');
-//				console.log(results);
 				resolve(results);
 			})
 			.catch(function(rej){
@@ -475,19 +469,22 @@ io.on('connection', function (socket) {
 	socket_connection = 1;	// debug soonkil jung
 
 // debug 2020.1008 soonkil jung
-
 /*
-	var promise = getTableBattery(SENS_NAME1);
-	promise
-	.then(function( result){
-		console.log('--- \234 getTableBattery 1 Success \r\n');
-		console.log(result);
-		socket.emit('chartBatteryInit',result);
-	}).catch(function(reject){
-		console.log('--- Oops getTableBattery G001 Fail !\r\n');
-		console.log(reject);
-	});			
+	try {						
+		var promise = getBattData( );
+		promise
+		.then((results)=>{ socket.emit('chartBattInit',results);
+		}).catch((reject)=>{ console.log(reject);
+		});
+
+	} catch(err){
+		console.log(err);		
+	}
 */
+	var promise = getBattData( );
+	promise.then((results)=>{ socket.emit('chartBattInit',results);
+	}).catch((reject)=>{ console.log(reject); });
+
 
 	var promise = testFind(3,SENS_NAME1);
 	promise
