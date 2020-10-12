@@ -3,7 +3,6 @@
 
 const SENS_NAME1 = 'G001';
 const SENS_NAME2 = 'G002';
-const sens2 = 'G110';
 
 var Promise = require('promise');
 const mongoose = require('mongoose');
@@ -152,8 +151,6 @@ app.use(function(err, req, res, next) {
 console.log('http on : ' + portAddr.toString());
 server.listen(portAddr);
 
-
-
 function sleepFor( sleepDuration ){
     var now = new Date().getTime();
     while(new Date().getTime() < now + sleepDuration){ /* do nothing */ } 
@@ -208,6 +205,107 @@ var dhtData = [ {"key": "Temperature","values":[]},
 setTimeout(function() {
 
 }, 10*1000);
+
+
+async function getBattVal(records){
+
+    return new Promise(function(resolve,reject){
+
+    try {
+    var retu = [];
+    var getData = {"x":0,"y":0};
+    
+	var tmp = records.wsnData.split(",");
+	var battVolt = tmp[8].split(":");
+	var keyNum = 0;
+
+   getData.x = new Date(records.date);
+   getData.y = battVolt[1] * 1.0 ;
+
+	if      ( tmp[0] == SENS_NAME1 ) keyNum = 1;
+	else if ( tmp[0] == SENS_NAME2 ) keyNum = 2;
+
+    retu.push( keyNum  );
+   	retu.push( getData );
+    resolve(retu);
+
+	} catch (err) {
+		console.log(err)
+		retu = [0,0]; 
+        reject(retu);
+	}
+    });
+}   
+
+var getBatteryDB = function ( ){
+
+   return new Promise(function(resolve, reject){
+   xbeeStateDB.find(
+      // {_id: false, __v: false},
+      function (err, docs){			
+         if( err ) reject(err);
+         else      resolve(docs);
+      });
+   });
+}
+
+async function setBattTable(docs){
+
+    return new Promise(function(resolve,reject){
+    var sequence = Promise.resolve();
+
+    var maxIndex = docs.length;
+    var dht = [[],[]];
+
+    for ( var i = 0 ; i < maxIndex ; i++ ){
+        (function(){
+            var closInde = i;
+            var records = docs[closInde];
+            sequence = sequence.then(function(){
+                return getBattVal(records);
+            })
+            .then(function(results){
+				if      ( results[0] == 1 ) dht[0].push(results[1]);
+                else if ( results[0] == 2 ) dht[1].push(results[1]);
+
+                if(closInde == (maxIndex -1) ) resolve(dht);
+            })
+            .catch(function(err){
+                console.log('get DbTable error');
+                console.log(err);
+                reject(err);
+            }) 
+        }())
+    }
+    });
+}   
+
+var getBattData = function( ){
+
+   return new Promise(function(resolve, reject){
+
+		var promise = getBatteryDB( );
+
+		promise
+		.then(function(docs){
+			var promise = setBattTable(docs);
+
+			promise
+			.then(function(results){			
+//				console.log('--- #302 SetBattTable results \r\n');
+//				console.log(results);
+				resolve(results);
+			})
+			.catch(function(rej){
+				reject(rej);
+			});
+		})
+		.catch(function(rej){
+			console.log(rej);
+		});
+   });
+}
+
 
 var testFind = function ( hours, sensName ){
 	var offset = hours * 60 * 60 * 1000;
@@ -337,12 +435,59 @@ var hoursProc = function ( hours, sensIn ){
 	}
 }
 
+async function getTableBatt(docs){
+
+    return new Promise(function(resolve,reject){
+    var sequence = Promise.resolve();
+
+    var maxIndex = docs.length;
+    var dht = [[],[]];
+
+    for ( var i = 0 ; i < maxIndex ; i++ ){
+        (function(){
+            var closInde = i;
+            var records = docs[closInde];
+            sequence = sequence.then(function(){
+                return getTempHumi(records);
+            })
+            .then(function(results){
+                dht[0].push(results[0]);
+                dht[1].push(results[1]);
+                if(closInde == (maxIndex -1) ) resolve(dht);
+            })
+            .catch(function(err){
+                console.log('get DbTable error');
+                console.log(err);
+                reject(err);
+            }) 
+        }())
+    }
+    });
+}   
+
+
+var socket_connection = 0;	// debug skj 2020.1011
+
 //--- socket.io support
 io.on('connection', function (socket) {
 	var host  = socket.client.request.headers.host;
 	console.log('connected to : ' + host);
+	socket_connection = 1;	// debug soonkil jung
 
 // debug 2020.1008 soonkil jung
+
+/*
+	var promise = getTableBattery(SENS_NAME1);
+	promise
+	.then(function( result){
+		console.log('--- \234 getTableBattery 1 Success \r\n');
+		console.log(result);
+		socket.emit('chartBatteryInit',result);
+	}).catch(function(reject){
+		console.log('--- Oops getTableBattery G001 Fail !\r\n');
+		console.log(reject);
+	});			
+*/
 
 	var promise = testFind(3,SENS_NAME1);
 	promise
@@ -369,7 +514,6 @@ io.on('connection', function (socket) {
 	promise
 	.then(function( result){
 		console.log('--- Success hourFind G001  !\r\n');		
-		console.log(result);		
 		socket.emit('hourInit1',result);
 	}).catch(function(reject){
 		console.log('--- Oops testFind G002 Fail !\r\n');
@@ -380,7 +524,6 @@ io.on('connection', function (socket) {
 	promise
 	.then(function( result){
 		console.log('--- Success hourFind G002  !\r\n');		
-		console.log(result);		
 		socket.emit('hourInit2',result);
 	}).catch(function(reject){
 		console.log(reject);
@@ -390,24 +533,15 @@ io.on('connection', function (socket) {
    socket.on('btnPress', function (btnKey) {
 		console.log('--- PRESS TEST!  !\r\n');		
 
-	
-/*
 		try {						
-			var promise = hoursProc(1,SENS_NAME1);
+			var promise = getBattData( );
 			promise
-			.then(function( result){
-				console.log('--- \234 #351 hourProc Success \r\n');
+			.then(function( results){
+//				console.log('--- #540 getBattData Success \r\n');
+//				console.log(results);
+				socket.emit('chartBattInit',results);
 			}).catch(function(reject){
-				console.log('--- #353 Oops housProc Fail !\r\n');
-				console.log(reject);
-			});
-
-			var promise = hoursProc(1,SENS_NAME2);
-			promise
-			.then(function( result){
-				console.log('--- \234 #351 hourProc Success \r\n');
-			}).catch(function(reject){
-				console.log('--- #353 Oops housProc Fail !\r\n');
+				console.log('--- #537 Oops getBattData Fail !\r\n');
 				console.log(reject);
 			});
 
@@ -415,7 +549,8 @@ io.on('connection', function (socket) {
 			console.log( '---#357 ---');
 			console.log(err);		
 		}
-*/
+
+/*
 		try{
 			var promise = hourFind(SENS_NAME1);
 			promise
@@ -438,9 +573,10 @@ io.on('connection', function (socket) {
 			});
 
 		}catch(err){
-			console.log('--- #372 ')
+			console.log('--- #372 ');
 			console.log(err);
 		}		
+*/
 
   	});
 
@@ -462,6 +598,7 @@ parser.on('data',function (data){
 //  1. delete dataBase 3hours late;
 //  2. save 1 hour database 
 
+	try{ 
 	var hourNow = (new Date()).getHours() 
 
 	if( hourNow != hourFlag ){
@@ -485,7 +622,12 @@ parser.on('data',function (data){
 			console.log(rej);		
 		});
 	}	
-		
+	}catch (err) {
+		console.log(err);
+	}
+	
+	try{
+
 	console.log("data =" + data);
 	var y =0;
 	var buff = new Buffer(data);
@@ -522,8 +664,12 @@ parser.on('data',function (data){
 			if(err) return console.error(err);	
 	    	console.log('SAVED: '+recordHour);
 		});					
-		myEmitter.emit('xbee',recordHour);
+		if(	socket_connection === 1 ) myEmitter.emit('xbee',recordHour);
 	}	
+
+	} catch(err){
+		console.log(err);
+	}
 });
 
 //--- end of scope

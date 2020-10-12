@@ -6,6 +6,11 @@ var socket = io.connect();
 var messages = 0;
 
 var tmp = new Date();
+
+var batteryData = [ {"key": "Battery1","values":[{"x":tmp,"y": 3.7},{"x":tmp, "y":3.7}]},
+	{"key": "Battery2" ,"values":[{"x":tmp,"y":3.7},{"x":tmp, "y":3.8}]}
+];
+
 var tempData = [ {"key": "Temperature1","values":[{"x":tmp,"y": 0},{"x":tmp, "y":10}]},
 	{"key": "Temperature2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":20}]}
 ];
@@ -22,6 +27,21 @@ var hourHumiData = [ {"key": "Humidity1","values":[{"x":tmp,"y": 0},{"x":tmp, "y
 	{"key": "Humidity2" ,"values":[{"x":tmp,"y":0},{"x":tmp, "y":0}]}
 ];
 
+var chartBattery = nv.models.lineWithFocusChart();
+chartBattery.xAxis.tickFormat(function(d) { 
+		return d3.time.format('%x')(new Date(d));
+});
+chartBattery.x2Axis.tickFormat(function(d) { 
+	return d3.time.format('%y/%m/%d')(new Date(d));
+});
+
+chartBattery.useInteractiveGuideline(true);
+chartBattery.yAxis.tickFormat(d3.format(',.1f'));
+chartBattery.y2Axis.tickFormat(d3.format(',.1f'));
+chartBattery.yDomain([3.0,4.2]);
+chartBattery.color(['red','green','yellow']);
+
+//---
 var chartTemp = nv.models.lineWithFocusChart();
 chartTemp.xAxis.tickFormat(function(d) { 
 		return d3.time.format('%X')(new Date(d));
@@ -127,8 +147,16 @@ $("document").ready(function() {
    gaugeInit(gaugeHumi2);
 });
 
+
+
 function btnTest1(arg){
 
+	console.log('--- btnTest1 Press ---');
+	socket.emit('btnPress',arg);
+
+}
+
+function btnTestbk2(arg){
 	var tmp = new Date();
 	// hourTempData[0].values = res[0];
 	// hourHumiData[0].values = res[1];
@@ -140,6 +168,7 @@ function btnTest1(arg){
 					
 	d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
 	chartHourTemp.update;
+
 	d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
 	chartHourHumi.update;
 
@@ -201,6 +230,147 @@ async function getTable(docs){
 	}
 	});
 }	
+
+async function fixBTData1(records){
+
+	return new Promise(function(resolve,reject){
+
+	try{
+		var dht = records;
+
+		dht[0].x = new Date ( records[0].x);
+		dht[1].x = new Date ( records[1].x);
+		console.log(dht);
+		resolve( dht );
+	} catch(err){
+		reject(err);
+	}
+
+	});
+}	
+
+
+async function fixBTDataC(records){
+
+	return new Promise(function(resolve,reject){
+
+	try{
+		var dht = records;
+		dht.x = new Date ( records.x);
+		resolve( dht );
+	} catch(err){
+		reject(err);
+	}
+
+	});
+}	
+
+
+async function fixBTDataA(docs){
+
+	return new Promise(function(resolve,reject){
+
+	var sequence = Promise.resolve();
+
+	var maxIndex = docs.length;
+
+	var dht = [ ];
+
+	for ( var i = 0 ; i < maxIndex ; i++ ){
+		(function(){
+			var closInde = i;
+
+			var tmp = docs[closInde] ;
+
+			sequence = sequence.then(function(){
+				return fixBTDataC(tmp);
+			})
+			.then(function(results){
+				dht.push(results);
+				if(closInde == (maxIndex -1) ) resolve(dht);
+			})
+			.catch(function(err){
+				console.log('get DbTable error');
+				console.log(err);
+				reject(err);				
+			}) 
+		}())
+
+	}
+	});
+}	
+
+async function fixBTData(docs){
+
+	return new Promise(function(resolve,reject){
+
+	var sequence = Promise.resolve();
+
+	var maxIndex1 = docs[0].length;
+	var maxIndex2 = docs[1].length;
+	var maxIndex = 0;
+
+	// if( maxIndex1 < maxIndex2) maxIndex = maxIndex1;
+	// else 						maxIndex = maxIndex2;
+
+	maxIndex = ( maxIndex1 < maxIndex2 ) ? maxIndex1 : maxIndex2;
+  
+	var dht = [[],[]];
+
+	for ( var i = 0 ; i < maxIndex ; i++ ){
+		(function(){
+			var closInde = i;
+
+			// console.log( docs[0][closInde];
+
+
+			var records = [ docs[0][closInde], docs[1][closInde] ];
+			
+			console.log(records);
+
+			sequence = sequence.then(function(){
+				return fixBTData1(records);
+			})
+			.then(function(results){
+				dht[0].push(results[0]);
+				dht[1].push(results[1]);
+				if(closInde == (maxIndex -1) ) resolve(dht);
+			})
+			.catch(function(err){
+				console.log('get DbTable error');
+				console.log(err);
+				reject(err);				
+			}) 
+		}())
+
+	}
+	});
+}	
+
+socket.on('chartBattInit', function (docs) {
+
+	var promise = fixBTDataA(docs[0]);
+	
+	promise
+	.then(function(results){
+		console.log('-- fixDTdataA 1 result');
+		console.log('-- result[0] = ' + results[0]);
+		batteryData[0].values = results;
+		return fixBTDataA(docs[1]);
+	})
+	.then(function(results){
+		console.log('-- fixDTdataA 2 result');
+		console.log('-- result[0] = ' + results[0]);
+		batteryData[1].values = results;
+
+		d3.select('#chartBattery svg').datum(batteryData).transition().duration(30).call(chartBattery);
+		chartBattery.update;
+	})
+	.catch(function(rej){
+		console.log(rej);
+	});			
+
+});
 
 socket.on('hourInit1', function (data) {
 
