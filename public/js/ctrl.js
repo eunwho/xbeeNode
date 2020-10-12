@@ -131,41 +131,12 @@ function gaugeInit(arg){
 }
 		
 $("document").ready(function() {
-   // var dummy = {0:0};
-   
-/*
-	d3.select('#chart1 svg').datum(dhtData1).transition().duration(5).call(chart1);
-	chart1.update;
 
-	d3.select('#chart2 svg').datum(dhtData2).transition().duration(5).call(chart2);
-	chart2.update;
-*/
-   // chart1.update;
-   // chart2.update;
-   
    gaugeInit(gaugeTemp1);
    gaugeInit(gaugeTemp2);
    gaugeInit(gaugeHumi1);
    gaugeInit(gaugeHumi2);
 
-   //$("document").getJSON('/wsnObj', { dummy : new Date().getTime() }, function(wsnObj){
-   // $.getJSON('/wsnObj', { dummy : new Date().getTime() }, function(wsnObj){
-   $.getJSON('/wsnObj', function(wsnObj){
-
-	   var promise = fixBTDataA(wsnObj[0]);
-    
-    	promise.then( function(results) {
-	        batteryData[0].values = results;
-        	return fixBTDataA(wsnObj[1]);
-    	})
-    	.then( function(results) {
-	        batteryData[1].values = results;
-
-			d3.select('#chartBattery svg').datum(batteryData).transition().duration(30).call(chartBattery);
-        	chartBattery.update;
-    	})
-    	.catch(function(rej) { console.log(rej);   });         
-	});
 
 });
 
@@ -394,55 +365,41 @@ socket.on('chartBattInit', function (docs) {
 
 });
 
-socket.on('hourInit1', function (data) {
+socket.on('hourInit', function (retVal) {
 
-	var promise = getTable(data);
+	var promise = getTable(retVal[0]);
 	promise
-	.then(function(res){
-
+	.then((res)=>{
 		hourTempData[0].values = res[0];
 		hourHumiData[0].values = res[1];
-					
-		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
-		chartHourTemp.update;
-		d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
-		chartHourHumi.update;
-	})
-	.catch(function(rej){
-		console.log("---- Error getTable ---")
-		console.log(rej);
-	});
-});
-
-socket.on('hourInit2', function (data) {
-
-	var promise = getTable(data);
-	promise
-	.then(function(res){
-
+		return getTable( retVal[1] );
+	}).then((res)=>{
 		hourTempData[1].values = res[0];
-		hourHumiData[1].values = res[1];
-					
+		hourHumiData[1].values = res[1];					
 		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
 		chartHourTemp.update;
 		d3.select('#chartHourHumi svg').datum(hourHumiData).transition().duration(30).call(chartHourHumi);
 		chartHourHumi.update;
-	})
-	.catch(function(rej){
-		console.log("---- Error getTable ---")
-		console.log(rej);
-	});
+	}).catch(function(rej){ 	console.log(rej); 	});
+
 });
 
-socket.on('graphInit1', function (data) {
+socket.on('graphInit', function (retVal) {
 
 	console.log('--- Test debug ---');
-	var promise = getTable(data);
+	var promise = getTable(retVal[0]);
 	promise
-	.then(function(res){
+	.then((res)=>{
 
 		tempData[0].values = res[0];
 		humiData[0].values = res[1];
+
+		return getTable(retVal[1]);
+
+	}).then( (res)=>{
+
+		tempData[1].values = res[0];
+		humiData[1].values = res[1];
 					
 		d3.select('#chartTemp svg').datum(tempData).transition().duration(30).call(chartTemp);
 		chartTemp.update;
@@ -450,53 +407,7 @@ socket.on('graphInit1', function (data) {
 		chartHumi.update;
 		// chartTemp.update;
 		
-	})
-	.catch(function(rej){
-		console.log("---- Error getTable ---")
-		console.log(rej);
-	});
-});
-
-socket.on('graphInit2', function (data) {
-
-	var promise = getTable(data);
-	promise
-	.then(function(res){
-		
-		tempData[1].values = res[0];
-		humiData[1].values = res[1];
-					
-		d3.select('#chartTemp svg').datum(tempData).transition().duration(30).call(chartTemp);
-		chartTemp.update;
-
-		d3.select('#chartHumi svg').datum(humiData).transition().duration(30).call(chartHumi);
-		chartHumi.update;
-		
-	})
-	.catch(function(rej){
-		console.log(rej);
-	});
-});
-
-
-socket.on('allGraphInit', function (data) {
-
-	var promise = getTable(data);
-	promise
-	.then(function(res){
-		console.log("--- dhtData - 2 - value")
-		
-		hourTempData[0].values = res[0];
-		hourHumiData[1].values = res[1];
-		
-		// console.log(dhtData2[0].values);
-					
-		d3.select('#chartHourTemp svg').datum(hourTempData).transition().duration(30).call(chartHourTemp);
-		// chartHourTemp.update;
-	})
-	.catch(function(rej){
-		console.log(rej);
-	});
+	}).catch((rej)=>{ console.log(rej); });
 });
 
 

@@ -452,76 +452,40 @@ var socket_connection = 0;	// debug skj 2020.1011
 io.on('connection', function (socket) {
 	var host  = socket.client.request.headers.host;
 	console.log('connected to : ' + host);
+
 	socket_connection = 1;	// debug soonkil jung
 
-// debug 2020.1008 soonkil jung
-/*
-	try {						
-		var promise = getBattData( );
-		promise
-		.then((results)=>{ socket.emit('chartBattInit',results);
-		}).catch((reject)=>{ console.log(reject);
-		});
-
-	} catch(err){
-		console.log(err);		
-	}
-*/
 	var promise = getBattData( );
 	promise.then((results)=>{ socket.emit('chartBattInit',results);
 	}).catch((reject)=>{ console.log(reject); });
 
+	var retVal = [0,0];
 
 	var promise = testFind(3,SENS_NAME1);
 	promise
-	.then(function( result){
-		console.log('--- \234 testFind1 Success \r\n');
-		// console.log(result);
-		socket.emit('graphInit1',result);
-	}).catch(function(reject){
-		console.log('--- Oops testFind G001 Fail !\r\n');
-		console.log(reject);
-	});				
+	.then(( results)=> {
+		retVal[0] = results;
+		return testFind(3,SENS_NAME2);
+	}).then((results) => {
+		retVal[1] = results;
+		socket.emit('graphInit',retVal);
+	}).catch((rej)=>{ console.log(rej); });				
 
-	var promise = testFind(3,SENS_NAME2);
-	promise
-	.then(function( result){
-		console.log('--- \234 testFind2 Success \r\n');
-		socket.emit('graphInit2',result);
-	}).catch(function(reject){
-		console.log('--- Oops testFind G002 Fail !\r\n');
-		console.log(reject);
-	});				
 
 	var promise = hourFind(SENS_NAME1);
 	promise
-	.then(function( result){
-		console.log('--- Success hourFind G001  !\r\n');		
-		socket.emit('hourInit1',result);
-	}).catch(function(reject){
-		console.log('--- Oops testFind G002 Fail !\r\n');
-		console.log(reject);
-	});				
-
-	var promise = hourFind(SENS_NAME2);
-	promise
-	.then(function( result){
-		console.log('--- Success hourFind G002  !\r\n');		
-		socket.emit('hourInit2',result);
-	}).catch(function(reject){
-		console.log(reject);
-	});				
-
+	.then( (res)=>{ retVal[0] = res ;
+		return hourFind(SENS_NAME2);
+	}).then( (res)=>{ retVal[1] = res ;
+		socket.emit('hourInit',retVal );
+	}).catch((rej)=>{ console.log(reject); });				
 
    socket.on('btnPress', function (btnKey) {
 		console.log('--- PRESS TEST!  !\r\n');		
-
 		try {						
 			var promise = getBattData( );
 			promise
 			.then(function( results){
-//				console.log('--- #540 getBattData Success \r\n');
-//				console.log(results);
 				socket.emit('chartBattInit',results);
 			}).catch(function(reject){
 				console.log('--- #537 Oops getBattData Fail !\r\n');
@@ -532,34 +496,6 @@ io.on('connection', function (socket) {
 			console.log( '---#357 ---');
 			console.log(err);		
 		}
-
-/*
-		try{
-			var promise = hourFind(SENS_NAME1);
-			promise
-			.then(function( result){
-				console.log('--- \234 hourFind Success GOO1 \r\n');
-				socket.emit('hourInit1',result);
-			}).catch(function(reject){
-				console.log('--- #363 Oops hourFind Fail !\r\n');
-				console.log(reject);
-			});
-
-			var promise = hourFind(SENS_NAME2);
-			promise
-			.then(function( result){
-				console.log('--- \234 hourFind Success G002 \r\n');
-				socket.emit('hourInit2',result);
-			}).catch(function(reject){
-				console.log('--- #363 Oops hourFind Fail !\r\n');
-				console.log(reject);
-			});
-
-		}catch(err){
-			console.log('--- #372 ');
-			console.log(err);
-		}		
-*/
 
   	});
 
