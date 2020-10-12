@@ -283,20 +283,9 @@ var getBattData = function( ){
 		var promise = getBatteryDB( );
 
 		promise
-		.then(function(docs){
-			var promise = setBattTable(docs);
-
-			promise
-			.then(function(results){			
-				resolve(results);
-			})
-			.catch(function(rej){
-				reject(rej);
-			});
-		})
-		.catch(function(rej){
-			console.log(rej);
-		});
+		.then( (docs) => {	return setBattTable(docs); })
+		.then( ( results )=>{ resolve ( results ); })
+		.catch( (rej     )=>{ console.log(rej); 	});
    });
 }
 
@@ -345,8 +334,8 @@ async function getTrHr(arg1){
 	return new Promise(function(resolve,reject){
 		// console.log("--- getTrHr input arg1 = " + arg1);	
 		try {
-   		sumHrTr[0] = sumHrTr[0]*1.0 + (arg1.TR) * 1.0 ;
-   		sumHrTr[1] = sumHrTr[1]*1.0 + (arg1.HR) * 1.0 ;
+	   		sumHrTr[0] = sumHrTr[0]*1.0 + (arg1.TR) * 1.0 ;
+   			sumHrTr[1] = sumHrTr[1]*1.0 + (arg1.HR) * 1.0 ;
 			resolve(sumHrTr);
 		} catch (err) { 
 			reject(err);
@@ -358,9 +347,11 @@ async function getOneHourMean(docs){
 
 	return new Promise(function(resolve,reject){
 
+	var maxIndex = docs.length;
 	var sequence = Promise.resolve();
 
-	var maxIndex = docs.length;
+	if( maxIndex < 1 ) reject(0);
+
 	var dht = [[0],[0]];
 
 	sumHrTr[0] = 0;	// global variable
@@ -374,30 +365,25 @@ async function getOneHourMean(docs){
 				return getTrHr(records);
 			})
 			.then(function(results){
-				// console.log(results);
-				if(closInde == (maxIndex -1) ){
-					// dht[0] = Math.floor10( results[0] / maxIndex , -1 );
-					// dht[1] = Math.floor10( results[1] / maxIndex , -1 );
+				if(closInde >= (maxIndex -1) ){
 					dht[0] = results[0] / maxIndex ;
 					dht[1] = results[1] / maxIndex ;
 					console.log('--- mean value = '+ dht);
 					resolve(dht);
 				}
 			})
-			.catch(function(err){
-				console.log('#272 Oops Err getOneHourMean');
-				console.log(err);
-				reject(err);				
-			}) 
+			.catch((err)=>{	reject(err); }) 
 		}())
 	}
 	});
 }	
 
+
 var hoursProc = function ( hours, sensIn ){
 	try{
    return new Promise(function(resolve, reject){
 	var promise = testFind(hours, sensIn );
+
 	promise
 	.then(function(docs){
 		
@@ -587,6 +573,7 @@ io.on('connection', function (socket) {
 		socket.emit('xbee',data);
 	});    
 });
+
 var hourFlag = (new Date()).getHours();
 
 parser.on('data',function (data){
@@ -595,30 +582,22 @@ parser.on('data',function (data){
 //  1. delete dataBase 3hours late;
 //  2. save 1 hour database 
 
-	try{ 
 	var hourNow = (new Date()).getHours() 
 
-	if( hourNow != hourFlag ){
-		hourFlag = hourNow;		
+	try{ 
 
-		var promise = hoursProc(1,SENS_NAME1);
-		promise
-		.then(function(res){
-			console.log(res);
-		})
-		.catch(function(rej){
-			console.log(rej);		
-		});
+		if( hourNow != hourFlag ){
+			hourFlag = hourNow;		
 
-		var promise = hoursProc(1,SENS_NAME2);
-		promise
-		.then(function(res){
-			console.log(res);
-		})
-		.catch(function(rej){
-			console.log(rej);		
-		});
-	}	
+			var promise = hoursProc(1,SENS_NAME1);
+			promise
+			.then(function(res){
+				return hoursProc(1,SENS_NAME2);
+			})
+			.then((res)=>{ })
+			.catch((rej)=>{	console.log(rej);		
+			});
+		}	
 	}catch (err) {
 		console.log(err);
 	}
