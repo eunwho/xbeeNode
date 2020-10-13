@@ -350,7 +350,7 @@ async function getOneHourMean(docs){
 	var maxIndex = docs.length;
 	var sequence = Promise.resolve();
 
-	if( maxIndex < 1 ) reject(0);
+	if( maxIndex < 2 ) reject(0);
 
 	var dht = [[0],[0]];
 
@@ -566,9 +566,6 @@ parser.on('data',function (data){
 		// myEmitter.emit('xbee',recordState);
   	// }else  if( (tmp1[1] == SENS_NAME1 ) && ( var1[0] == "TR" ) && (var2[0] == "HR")){
   	}else  if( ( var1[0] == "TR" ) && (var2[0] == "HR")){
-	
-		// console.log("temperature =" + var1[1]);
-		// console.log("Humidity =" + var2[1]);
 	
 		var recordHour = new testDB({sensName:tmp1[1], TR:var1[1], HR:var2[1]});
 		

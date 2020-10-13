@@ -29,7 +29,7 @@ var hourHumiData = [ {"key": "Humidity1","values":[{"x":tmp,"y": 0},{"x":tmp, "y
 
 var chartBattery = nv.models.lineWithFocusChart();
 chartBattery.xAxis.tickFormat(function(d) { 
-		return d3.time.format('%x')(new Date(d));
+	return d3.time.format('%y/%m/%d')(new Date(d));
 });
 chartBattery.x2Axis.tickFormat(function(d) { 
 	return d3.time.format('%y/%m/%d')(new Date(d));
@@ -38,7 +38,7 @@ chartBattery.x2Axis.tickFormat(function(d) {
 chartBattery.useInteractiveGuideline(true);
 chartBattery.yAxis.tickFormat(d3.format(',.1f'));
 chartBattery.y2Axis.tickFormat(d3.format(',.1f'));
-chartBattery.yDomain([3.0,4.2]);
+// chartBattery.yDomain([3.3,4.2]);
 chartBattery.color(['red','green','yellow']);
 
 //---
@@ -52,7 +52,7 @@ chartTemp.x2Axis.tickFormat(function(d) {
 chartTemp.useInteractiveGuideline(true);
 chartTemp.yAxis.tickFormat(d3.format(',.1f'));
 chartTemp.y2Axis.tickFormat(d3.format(',.1f'));
-chartTemp.yDomain([-10,40]);
+//chartTemp.yDomain([-10,40]);
 chartTemp.color(['red','green','yellow']);
 
 var chartHourTemp = nv.models.lineWithFocusChart();
@@ -65,7 +65,7 @@ chartHourTemp.x2Axis.tickFormat(function(d) {
 chartHourTemp.useInteractiveGuideline(true);
 chartHourTemp.yAxis.tickFormat(d3.format(',.1f'));
 chartHourTemp.y2Axis.tickFormat(d3.format(',.1f'));
-chartHourTemp.yDomain([-10,40]);
+//chartHourTemp.yDomain([-10,40]);
 chartHourTemp.color(['red','green','yellow']);
 
 //-- Chart2  Select Day, Week, Month, Year chart
@@ -79,7 +79,7 @@ chartHumi.x2Axis.tickFormat(function(d) {
 chartHumi.useInteractiveGuideline(true);
 chartHumi.yAxis.tickFormat(d3.format(',.1f'));
 chartHumi.y2Axis.tickFormat(d3.format(',.1f'));
-chartHumi.yDomain([0,100]);
+//chartHumi.yDomain([0,100]);
 chartHumi.color(['red','green','yellow']);
 
 var chartHourHumi = nv.models.lineWithFocusChart();
@@ -92,7 +92,7 @@ chartHourHumi.x2Axis.tickFormat(function(d) {
 chartHourHumi.useInteractiveGuideline(true);
 chartHourHumi.yAxis.tickFormat(d3.format(',.1f'));
 chartHourHumi.y2Axis.tickFormat(d3.format(',.1f'));
-chartHourHumi.yDomain([0,100]);
+//chartHourHumi.yDomain([0,100]);
 chartHourHumi.color(['red','green','yellow']);
 
 
@@ -126,8 +126,6 @@ function gaugeInit(arg){
    $(a).attr('data-major-ticks',arg.mTick);
    $(a).attr('data-stroke-ticks',true);
    $(a).attr('data-highlights',arg.alarm);
-
-
 }
 		
 $("document").ready(function() {
@@ -136,8 +134,6 @@ $("document").ready(function() {
    gaugeInit(gaugeTemp2);
    gaugeInit(gaugeHumi1);
    gaugeInit(gaugeHumi2);
-
-
 });
 
 
@@ -224,25 +220,6 @@ async function getTable(docs){
 	});
 }	
 
-async function fixBTData1(records){
-
-	return new Promise(function(resolve,reject){
-
-	try{
-		var dht = records;
-
-		dht[0].x = new Date ( records[0].x);
-		dht[1].x = new Date ( records[1].x);
-		console.log(dht);
-		resolve( dht );
-	} catch(err){
-		reject(err);
-	}
-
-	});
-}	
-
-
 async function fixBTDataC(records){
 
 	return new Promise(function(resolve,reject){
@@ -251,9 +228,7 @@ async function fixBTDataC(records){
 		var dht = records;
 		dht.x = new Date ( records.x);
 		resolve( dht );
-	} catch(err){
-		reject(err);
-	}
+	} catch(err){ reject(err); }
 
 	});
 }	
@@ -293,75 +268,19 @@ async function fixBTDataA(docs){
 	});
 }	
 
-async function fixBTData(docs){
-
-	return new Promise(function(resolve,reject){
-
-	var sequence = Promise.resolve();
-
-	var maxIndex1 = docs[0].length;
-	var maxIndex2 = docs[1].length;
-	var maxIndex = 0;
-
-	// if( maxIndex1 < maxIndex2) maxIndex = maxIndex1;
-	// else 						maxIndex = maxIndex2;
-
-	maxIndex = ( maxIndex1 < maxIndex2 ) ? maxIndex1 : maxIndex2;
-  
-	var dht = [[],[]];
-
-	for ( var i = 0 ; i < maxIndex ; i++ ){
-		(function(){
-			var closInde = i;
-
-			// console.log( docs[0][closInde];
-
-
-			var records = [ docs[0][closInde], docs[1][closInde] ];
-			
-			console.log(records);
-
-			sequence = sequence.then(function(){
-				return fixBTData1(records);
-			})
-			.then(function(results){
-				dht[0].push(results[0]);
-				dht[1].push(results[1]);
-				if(closInde == (maxIndex -1) ) resolve(dht);
-			})
-			.catch(function(err){
-				console.log('get DbTable error');
-				console.log(err);
-				reject(err);				
-			}) 
-		}())
-
-	}
-	});
-}	
-
 socket.on('chartBattInit', function (docs) {
 
 	var promise = fixBTDataA(docs[0]);
 	
 	promise
-	.then(function(results){
-		console.log('-- fixDTdataA 1 result');
-		console.log('-- result[0] = ' + results[0]);
-		batteryData[0].values = results;
+	.then(function(results){ batteryData[0].values = results;
 		return fixBTDataA(docs[1]);
-	})
-	.then(function(results){
-		console.log('-- fixDTdataA 2 result');
-		console.log('-- result[0] = ' + results[0]);
+	}).then(function(results){
 		batteryData[1].values = results;
-
-		d3.select('#chartBattery svg').datum(batteryData).transition().duration(30).call(chartBattery);
+		d3.select('#chartBattery svg').datum(batteryData).
+			transition().duration(30).call(chartBattery);
 		chartBattery.update;
-	})
-	.catch(function(rej){
-		console.log(rej);
-	});			
+	}).catch(function(rej){	console.log(rej);	});			
 
 });
 
