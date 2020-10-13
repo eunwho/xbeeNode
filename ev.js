@@ -350,8 +350,6 @@ async function getOneHourMean(docs){
 	var maxIndex = docs.length;
 	var sequence = Promise.resolve();
 
-	if( maxIndex < 2 ) reject(0);
-
 	var dht = [[0],[0]];
 
 	sumHrTr[0] = 0;	// global variable
@@ -387,8 +385,8 @@ var hoursProc = function ( hours, sensIn ){
 	promise
 	.then(function(docs){
 		
-		console.log(docs);			
-		
+		if (  docs.length < 4 ) resolve(0);
+
 		var promise = getOneHourMean(docs);
 		promise
 		.then(function(res){
@@ -414,6 +412,7 @@ var hoursProc = function ( hours, sensIn ){
 		console.log(err);
 	}
 }
+
 
 async function getTableBatt(docs){
 
@@ -518,6 +517,7 @@ parser.on('data',function (data){
 //  1. delete dataBase 3hours late;
 //  2. save 1 hour database 
 
+
 	var hourNow = (new Date()).getHours() 
 
 	try{ 
@@ -567,13 +567,14 @@ parser.on('data',function (data){
   	// }else  if( (tmp1[1] == SENS_NAME1 ) && ( var1[0] == "TR" ) && (var2[0] == "HR")){
   	}else  if( ( var1[0] == "TR" ) && (var2[0] == "HR")){
 	
-		var recordHour = new testDB({sensName:tmp1[1], TR:var1[1], HR:var2[1]});
+		var xbee1 = new testDB({sensName:tmp1[1], TR:var1[1], HR:var2[1]});
 		
-		recordHour.save( function( err, recordHour ){
+		xbee1.save( function( err, recordHour ){
 			if(err) return console.error(err);	
-	    	console.log('SAVED: '+recordHour);
+	    	console.log('SAVED : ' + xbee1);
 		});					
-		if(	socket_connection === 1 ) myEmitter.emit('xbee',recordHour);
+
+		if(	socket_connection === 1 ) myEmitter.emit('xbee',xbee1 );
 	}	
 
 	} catch(err){
